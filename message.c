@@ -72,7 +72,7 @@ esp_err_t *ubirch_message(msgpack_sbuffer *sbuf, const unsigned char *uuid, int3
     msgpack_packer *pk = msgpack_packer_new(proto, ubirch_protocol_write);
 
     // load the signature of the previously sent message and copy it to the protocol
-    unsigned char *last_signature;
+    unsigned char *last_signature = NULL;
     size_t last_signature_len = 0;
     ubirch_load_signature(&last_signature, &last_signature_len);
     if(last_signature != NULL && last_signature_len == UBIRCH_PROTOCOL_SIGN_SIZE) {

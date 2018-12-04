@@ -66,7 +66,7 @@ void ubirch_parse_response(msgpack_unpacker *unpacker, ubirch_response_handler h
         // get the envelope version
         if (envelope->type == MSGPACK_OBJECT_POSITIVE_INTEGER) {
             p_version = (int) envelope->via.u64;
-            ESP_LOGI(TAG, "VERSION: %d (variant %d)\r\n", p_version >> 4U, p_version & 0xfU);
+            ESP_LOGI(TAG, "VERSION: %d (variant %d)", p_version >> 4U, p_version & 0xfU);
         }
         // get the backend UUID
         if ((++envelope)->type == MSGPACK_OBJECT_RAW) {
@@ -91,9 +91,10 @@ void ubirch_parse_response(msgpack_unpacker *unpacker, ubirch_response_handler h
                             !memcmp(last_signature, envelope->via.raw.ptr, UBIRCH_PROTOCOL_SIGN_SIZE);
                 }
             }
+            free(last_signature);
             // only continue, if the signatures match
             if (last_signature_matches && (++envelope)->type == MSGPACK_OBJECT_POSITIVE_INTEGER) {
-                ESP_LOGI(TAG, "TYPE: %d\r\n", (unsigned int) envelope->via.u64);
+                ESP_LOGI(TAG, "TYPE: %d", (unsigned int) envelope->via.u64);
                 switch ((unsigned int) envelope->via.u64) {
                     case MSGPACK_MSG_REPLY:
                         parse_measurement_reply(++envelope, handler);
@@ -114,7 +115,6 @@ void ubirch_parse_response(msgpack_unpacker *unpacker, ubirch_response_handler h
     } else {
         ESP_LOGW(TAG, "empty message not accepted");
     }
-    ESP_LOGI(TAG, "destroy result");
     msgpack_unpacked_destroy(&result);
 }
 
