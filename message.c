@@ -73,12 +73,12 @@ esp_err_t *ubirch_message(msgpack_sbuffer *sbuf, const unsigned char *uuid, int3
 
     // load the signature of the previously sent message and copy it to the protocol
     unsigned char *last_signature;
-    size_t last_signature_len;
+    size_t last_signature_len = 0;
     ubirch_load_signature(&last_signature, &last_signature_len);
     if(last_signature != NULL && last_signature_len == UBIRCH_PROTOCOL_SIGN_SIZE) {
         memcpy(proto->signature, last_signature, UBIRCH_PROTOCOL_SIGN_SIZE);
+        free(last_signature);
     }
-    free(last_signature);
 
     // start the protocol
     ubirch_protocol_start(proto, pk);
