@@ -77,8 +77,8 @@ esp_err_t *ubirch_message(msgpack_sbuffer *sbuf, const unsigned char *uuid, int3
     ubirch_load_signature(&last_signature, &last_signature_len);
     if(last_signature != NULL && last_signature_len == UBIRCH_PROTOCOL_SIGN_SIZE) {
         memcpy(proto->signature, last_signature, UBIRCH_PROTOCOL_SIGN_SIZE);
-        free(last_signature);
     }
+    free(last_signature);
 
     // start the protocol
     ubirch_protocol_start(proto, pk);

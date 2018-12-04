@@ -76,7 +76,7 @@ void ubirch_parse_response(msgpack_unpacker *unpacker, ubirch_response_handler h
         if (p_version == proto_chained) {
             // previous message signature (from our request message)
             unsigned char *last_signature = NULL;
-            size_t last_signature_len;
+            size_t last_signature_len = 0;
             if (ubirch_load_signature(&last_signature, &last_signature_len) != ESP_OK) {
                 ESP_LOGW(TAG, "error loading last signature");
             }
