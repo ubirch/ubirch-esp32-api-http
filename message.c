@@ -33,9 +33,6 @@
 
 static const char *TAG = "MESSAGE";
 
-#define TIME_RES_SEC 1000
-
-
 esp_err_t ubirch_load_signature(unsigned char **signature, size_t *len) {
     esp_err_t err;
 
@@ -58,13 +55,6 @@ esp_err_t ubirch_store_signature(unsigned char *signature, size_t len) {
     return err;
 }
 
-
-static uint64_t get_time_us() {
-    time_t now = time(NULL);
-    int64_t timer = esp_timer_get_time();
-    return ((uint64_t) (now) * TIME_RES_SEC) + (((uint64_t) (timer) * TIME_RES_SEC / 1000000) % TIME_RES_SEC);
-}
-
 esp_err_t *ubirch_message(msgpack_sbuffer *sbuf, const unsigned char *uuid, int32_t *values, uint16_t num) {
     // create buffer, writer, ubirch protocol context and packer
     ubirch_protocol *proto = ubirch_protocol_new(proto_chained, MSGPACK_MSG_UBIRCH,
@@ -75,7 +65,7 @@ esp_err_t *ubirch_message(msgpack_sbuffer *sbuf, const unsigned char *uuid, int3
     unsigned char *last_signature = NULL;
     size_t last_signature_len = 0;
     ubirch_load_signature(&last_signature, &last_signature_len);
-    if(last_signature != NULL && last_signature_len == UBIRCH_PROTOCOL_SIGN_SIZE) {
+    if (last_signature != NULL && last_signature_len == UBIRCH_PROTOCOL_SIGN_SIZE) {
         memcpy(proto->signature, last_signature, UBIRCH_PROTOCOL_SIGN_SIZE);
     }
     free(last_signature);
@@ -85,7 +75,10 @@ esp_err_t *ubirch_message(msgpack_sbuffer *sbuf, const unsigned char *uuid, int3
 
     // create array[ timestamp, value1, value2 ])
     msgpack_pack_array(pk, num + 1);
-    uint64_t ts = get_time_us();
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    uint64_t ts = (uint64_t) tv.tv_sec * (uint64_t) 1000000 + tv.tv_usec;
+
     msgpack_pack_uint64(pk, ts);
     for (int i = 0; i < num; ++i) {
         msgpack_pack_int32(pk, values[i]);
