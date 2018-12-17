@@ -1,6 +1,6 @@
 /*!
- * @file
- * @brief ubirch response parser
+ * @file    response.c
+ * @brief   ubirch response parser
  *
  * ...
  *

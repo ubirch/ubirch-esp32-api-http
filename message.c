@@ -1,6 +1,6 @@
 /*!
- * @file
- * @brief TODO: ${FILE}
+ * @file    message.c
+ * @brief   ubirch message parser
  *
  * ...
  *

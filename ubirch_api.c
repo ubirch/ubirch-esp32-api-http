@@ -60,6 +60,7 @@ static esp_err_t _ubirch_http_event_handler(esp_http_client_event_t *evt) {
     return ESP_OK;
 }
 
+
 esp_err_t ubirch_send(const char *url, const char *data, const size_t length, msgpack_unpacker *unpacker) {
     ESP_LOGD(TAG, "ubirch_send(%s, len=%d)", url, length);
 
