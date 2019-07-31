@@ -31,6 +31,8 @@
 #include "message.h"
 #include "ubirch_api.h"
 
+#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+
 static const char *TAG = "MESSAGE";
 
 esp_err_t ubirch_load_signature(unsigned char **signature, size_t *len) {
@@ -98,3 +100,53 @@ esp_err_t *ubirch_message(msgpack_sbuffer *sbuf, const unsigned char *uuid, int3
 
     return ESP_OK;
 }
+
+esp_err_t *ubirch_message_niomon(msgpack_sbuffer *sbuf, const unsigned char *uuid, const unsigned char *data) {
+	// create buffer, writer, ubirch protocol context and packer
+	ESP_LOG_BUFFER_HEX_LEVEL("DATA", data, 28,   ESP_LOG_DEBUG);
+	ubirch_protocol *proto = ubirch_protocol_new(proto_chained, MSGPACK_MSG_UBIRCH,
+	                                             sbuf, msgpack_sbuffer_write, ed25519_sign, uuid);
+	msgpack_packer *pk = msgpack_packer_new(proto, ubirch_protocol_write);
+
+	// load the signature of the previously sent message and copy it to the protocol
+	unsigned char *last_signature = NULL;
+	size_t last_signature_len = 0;
+	ubirch_load_signature(&last_signature, &last_signature_len);
+	if (last_signature != NULL && last_signature_len == UBIRCH_PROTOCOL_SIGN_SIZE) {
+		memcpy(proto->signature, last_signature, UBIRCH_PROTOCOL_SIGN_SIZE);
+	}
+	free(last_signature);
+
+	//
+	// print the hash of the message
+
+	unsigned char sha512sum[UBIRCH_PROTOCOL_HASH_SIZE];
+	mbedtls_sha512_context hash = {};
+	mbedtls_sha512_update(&hash, data, strlen((const char *)data));
+	mbedtls_sha512_finish(&hash, sha512sum);
+	ESP_LOG_BUFFER_HEX_LEVEL("HASH ", sha512sum, UBIRCH_PROTOCOL_HASH_SIZE, ESP_LOG_DEBUG);
+
+
+	// start the protocol
+	ubirch_protocol_start(proto, pk);
+
+	// create array[ timestamp, value1, value2 ])
+	// pack the hash into the payload field
+	msgpack_pack_raw(pk, UBIRCH_PROTOCOL_HASH_SIZE);
+	msgpack_pack_raw_body(pk, sha512sum, UBIRCH_PROTOCOL_HASH_SIZE);
+
+	// finish the protocol and then store the signature of this message
+	ubirch_protocol_finish(proto, pk);
+
+	// store signature
+	ubirch_store_signature(proto->signature, UBIRCH_PROTOCOL_SIGN_SIZE);
+
+	// free allocated ressources
+	msgpack_packer_free(pk);
+	ubirch_protocol_free(proto);
+
+	ESP_LOG_BUFFER_HEX_LEVEL(TAG, sbuf->data, (uint16_t) sbuf->size, ESP_LOG_DEBUG);
+
+	return ESP_OK;
+}
+

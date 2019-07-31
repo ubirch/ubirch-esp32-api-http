@@ -61,4 +61,14 @@ esp_err_t ubirch_load_signature(unsigned char **signature, size_t *len);
  */
 esp_err_t *ubirch_message(msgpack_sbuffer *sbuf, const unsigned char *uuid, int32_t *values, uint16_t num);
 
+/*!
+ * TODO
+ * @param sbuf
+ * @param uuid
+ * @param data
+ * @return
+ */
+esp_err_t *ubirch_message_niomon(msgpack_sbuffer *sbuf, const unsigned char *uuid, const unsigned char *data);
+
+
 #endif //UBIRCH_API_MESSAGE_H

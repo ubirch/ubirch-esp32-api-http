@@ -29,8 +29,11 @@
 #include <msgpack.h>
 #include <ubirch_protocol.h>
 #include "ubirch_api.h"
+#include "../ubirch-esp32-cumulocity-client/ubirch-protocol-c8y.h" //TODO
 
 static const char *TAG = "UBIRCH API";
+
+#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
 
 /*!
  * Event handler for the ubirch response. Feeds response data into a msgpack unpacker to be parsed.
@@ -91,4 +94,43 @@ esp_err_t ubirch_send(const char *url, const char *data, const size_t length, ms
 
     esp_http_client_cleanup(client);
     return err;
+}
+
+esp_err_t ubirch_send_niomon(const char *url, const char *data, const size_t length, msgpack_unpacker *unpacker) {
+	ESP_LOGD(TAG, "ubirch_send(%s, len=%d)", url, length);
+
+	char *authorization = NULL;
+	c8y_get_authorization(&authorization);
+
+	esp_http_client_config_t config = {
+			.url = url,
+			.event_handler = _ubirch_http_event_handler,
+			.user_data = unpacker
+	};
+	esp_http_client_handle_t client = esp_http_client_init(&config);
+
+	// POST
+	esp_http_client_set_url(client, url);
+	esp_http_client_set_method(client, HTTP_METHOD_POST);
+	esp_http_client_set_header(client, "Authorization", authorization);
+	esp_http_client_set_header(client, "Content-Type", "application/octet-stream");
+
+#ifdef UBIRCH_AUTH
+	esp_http_client_set_header(client, "Content-Type", "application/octet-stream");
+	esp_http_client_set_header(client, "Authorization", UBIRCH_AUTH);
+#endif
+	esp_http_client_set_post_field(client, data, (int) (length));
+	esp_err_t err = esp_http_client_perform(client);
+	if (err == ESP_OK) {
+		const int http_status = esp_http_client_get_status_code(client);
+		const int content_length = esp_http_client_get_content_length(client);
+		ESP_LOGI(TAG, "HTTP POST status = %d, content_length = %d", http_status, content_length);
+		err = (http_status >= 200 && http_status <= 299) ? ESP_OK : ESP_FAIL;
+	} else {
+		ESP_LOGE(TAG, "HTTP POST request failed: %s", esp_err_to_name(err));
+	}
+
+	free(authorization);
+	esp_http_client_cleanup(client);
+	return err;
 }

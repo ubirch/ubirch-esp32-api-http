@@ -58,7 +58,7 @@ void ubirch_parse_response(msgpack_unpacker *unpacker, ubirch_response_handler h
     // new unpacked result buffer
     msgpack_unpacked result;
     msgpack_unpacked_init(&result);
-	ESP_LOG_BUFFER_HEX_LEVEL("response", unpacker->buffer, unpacker->used, ESP_LOG_INFO);
+//	ESP_LOG_BUFFER_HEX_LEVEL("response", unpacker->buffer, unpacker->used, ESP_LOG_INFO);
     // unpack into result buffer and look for ARRAY
     if (msgpack_unpacker_next(unpacker, &result) && result.data.type == MSGPACK_OBJECT_ARRAY) {
         // redirect the result to the envelope

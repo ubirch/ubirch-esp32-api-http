@@ -30,7 +30,7 @@
 #include <msgpack.h>
 
 #define MSGPACK_MSG_REPLY 85
-#define MSGPACK_MSG_UBIRCH 50
+#define MSGPACK_MSG_UBIRCH 0
 
 /*!
  * Send data to the ubirch backend.
@@ -41,5 +41,16 @@
  * @return ESP_OK or an error code
  */
 esp_err_t ubirch_send(const char *url, const char *data, const size_t length, msgpack_unpacker *unpacker);
+
+/*!
+ * TODO
+ * @param url
+ * @param data
+ * @param length
+ * @param unpacker
+ * @return
+ */
+esp_err_t ubirch_send_niomon(const char *url, const char *data, const size_t length, msgpack_unpacker *unpacker);
+
 
 #endif //UBIRCH_API_H
