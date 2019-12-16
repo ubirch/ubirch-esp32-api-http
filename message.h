@@ -27,6 +27,7 @@
 #define UBIRCH_API_MESSAGE_H
 
 #include <msgpack.h>
+#include "ubirch_protocol.h"
 
 /*!
  * Store the signature in non-volatile memory to save it for the next message.
