@@ -29,7 +29,7 @@
 #include <msgpack.h>
 #include <ubirch_protocol.h>
 #include "ubirch_api.h"
-#include "../../../esp-idf/components/mbedtls/mbedtls/include/mbedtls/base64.h"
+#include "mbedtls/base64.h"
 
 static const char *TAG = "UBIRCH API";
 
