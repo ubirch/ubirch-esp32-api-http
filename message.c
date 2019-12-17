@@ -82,7 +82,7 @@ esp_err_t *ubirch_message(ubirch_protocol *upp, int32_t *values, uint16_t num) {
     }
 
     // create ubirch protocol message
-    ubirch_protocol_message(upp, proto_chained, UBIRCH_PROTOCOL_TYPE_MSGPACK, upp->data, upp->size);
+    ubirch_protocol_message(upp, proto_chained, UBIRCH_PROTOCOL_TYPE_MSGPACK, sbuf.data, sbuf.size);
 
     // store signature of the new message
     ubirch_store_signature(upp->signature, UBIRCH_PROTOCOL_SIGN_SIZE);
