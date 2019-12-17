@@ -29,6 +29,7 @@
 #include <msgpack.h>
 #include <ubirch_protocol.h>
 #include "ubirch_api.h"
+#include "../../../esp-idf/components/mbedtls/mbedtls/include/mbedtls/base64.h"
 
 static const char *TAG = "UBIRCH API";
 
@@ -70,6 +71,17 @@ static char *uuid_to_string(const unsigned char *uuid) {
     return strdup(uuid_string);
 }
 
+static char *auth_to_base64(const char *auth) {
+    unsigned char *auth64 = NULL;
+    size_t auth64_len;
+    mbedtls_base64_encode(auth64, 0, &auth64_len,
+                          (const unsigned char *) auth, strlen(auth));
+    auth64 = malloc(auth64_len);
+    mbedtls_base64_encode(auth64, auth64_len, &auth64_len,
+                          (const unsigned char *) auth, strlen(auth));
+    return (char *) auth64;
+}
+
 esp_err_t ubirch_send(const char *url, const unsigned char *uuid, const char *data, const size_t length,
                       msgpack_unpacker *unpacker) {
     ESP_LOGD(TAG, "ubirch_send(%s, len=%d)", url, length);
@@ -84,9 +96,9 @@ esp_err_t ubirch_send(const char *url, const unsigned char *uuid, const char *da
     // POST
     esp_http_client_set_url(client, url);
     esp_http_client_set_method(client, HTTP_METHOD_POST);
-#ifdef UBIRCH_AUTH
+#ifdef CONFIG_UBIRCH_AUTH
     esp_http_client_set_header(client, "X-Ubirch-Hardware-Id", uuid_to_string(uuid));
-    esp_http_client_set_header(client, "X-Ubirch-Credential", UBIRCH_AUTH);
+    esp_http_client_set_header(client, "X-Ubirch-Credential", auth_to_base64(CONFIG_UBIRCH_AUTH));
     esp_http_client_set_header(client, "X-Ubirch-Auth-Type", "ubirch");
 #endif
     esp_http_client_set_post_field(client, data, (int) (length));
