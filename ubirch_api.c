@@ -97,6 +97,7 @@ esp_err_t ubirch_send(const char *url, const unsigned char *uuid, const char *da
     esp_http_client_set_url(client, url);
     esp_http_client_set_method(client, HTTP_METHOD_POST);
 #ifdef CONFIG_UBIRCH_AUTH
+    esp_http_client_set_header(client, "Content-Type", "application/octet-stream");
     esp_http_client_set_header(client, "X-Ubirch-Hardware-Id", uuid_to_string(uuid));
     esp_http_client_set_header(client, "X-Ubirch-Credential", auth_to_base64(CONFIG_UBIRCH_AUTH));
     esp_http_client_set_header(client, "X-Ubirch-Auth-Type", "ubirch");
