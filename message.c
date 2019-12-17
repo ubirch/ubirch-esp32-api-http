@@ -89,8 +89,6 @@ esp_err_t *ubirch_message(ubirch_protocol *upp, int32_t *values, uint16_t num) {
     ubirch_store_signature(upp->signature, UBIRCH_PROTOCOL_SIGN_SIZE);
 
     ESP_LOG_BUFFER_HEXDUMP(TAG, upp->data, (uint16_t) upp->size, ESP_LOG_DEBUG);
-    ESP_LOGI(TAG, "upp-data: %s", upp->data);
-    ESP_LOGI(TAG, "upp-size: %d", upp->size);
 
     return ESP_OK;
 }
