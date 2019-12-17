@@ -40,6 +40,7 @@
  * @param unpacker a msgpack unpacker to feed the response to
  * @return ESP_OK or an error code
  */
-esp_err_t ubirch_send(const char *url, const char *data, const size_t length, msgpack_unpacker *unpacker);
+esp_err_t ubirch_send(const char *url, const unsigned char *uuid, const char *data, const size_t length,
+                      msgpack_unpacker *unpacker);
 
 #endif //UBIRCH_API_H

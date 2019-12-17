@@ -60,8 +60,18 @@ static esp_err_t _ubirch_http_event_handler(esp_http_client_event_t *evt) {
     return ESP_OK;
 }
 
+static char *ubirch_api_uuid_to_string(const unsigned char *uuid) {
+    char uuid_string[36];
+    const char *format = "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x";
+    sprintf(uuid_string, format,
+            uuid[0], uuid[1], uuid[2], uuid[3], uuid[4], uuid[5], uuid[6], uuid[7],
+            uuid[8], uuid[9], uuid[10], uuid[11], uuid[12], uuid[13], uuid[14], uuid[15]
+    );
+    return strdup(uuid_string);
+}
 
-esp_err_t ubirch_send(const char *url, const char *data, const size_t length, msgpack_unpacker *unpacker) {
+esp_err_t ubirch_send(const char *url, const unsigned char *uuid, const char *data, const size_t length,
+                      msgpack_unpacker *unpacker) {
     ESP_LOGD(TAG, "ubirch_send(%s, len=%d)", url, length);
 
     esp_http_client_config_t config = {
@@ -75,8 +85,9 @@ esp_err_t ubirch_send(const char *url, const char *data, const size_t length, ms
     esp_http_client_set_url(client, url);
     esp_http_client_set_method(client, HTTP_METHOD_POST);
 #ifdef UBIRCH_AUTH
-    esp_http_client_set_header(client, "Content-Type", "application/octet-stream");
-    esp_http_client_set_header(client, "Authorization", UBIRCH_AUTH);
+    esp_http_client_set_header(client, "X-Ubirch-Hardware-Id", ubirch_api_uuid_to_string(uuid));
+    esp_http_client_set_header(client, "X-Ubirch-Credential", UBIRCH_AUTH);
+    esp_http_client_set_header(client, "X-Ubirch-Auth-Type", "ubirch");
 #endif
     esp_http_client_set_post_field(client, data, (int) (length));
     esp_err_t err = esp_http_client_perform(client);
