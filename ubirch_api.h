@@ -26,11 +26,11 @@
 #ifndef UBIRCH_API_H
 #define UBIRCH_API_H
 
-#include <esp_err.h>
 #include <msgpack.h>
+#include <esp_err.h>
 
 #define MSGPACK_MSG_REPLY 85
-#define MSGPACK_MSG_UBIRCH 0
+#define MSGPACK_MSG_UBIRCH 50
 
 /*!
  * Send data to the ubirch backend.
@@ -40,7 +40,8 @@
  * @param unpacker a msgpack unpacker to feed the response to
  * @return ESP_OK or an error code
  */
-esp_err_t ubirch_send(const char *url, const char *data, const size_t length, msgpack_unpacker *unpacker);
+esp_err_t ubirch_send(const char *url, const unsigned char *uuid, const char *data, const size_t length,
+                      msgpack_unpacker *unpacker);
 
 /*!
  * TODO
@@ -50,7 +51,8 @@ esp_err_t ubirch_send(const char *url, const char *data, const size_t length, ms
  * @param unpacker
  * @return
  */
-esp_err_t ubirch_send_niomon(const char *url, const char *data, const size_t length, msgpack_unpacker *unpacker);
+esp_err_t ubirch_send_niomon(const char *url, const unsigned char *uuid, const char *data, const size_t length,
+                             msgpack_unpacker *unpacker);
 
 
 #endif //UBIRCH_API_H

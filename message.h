@@ -26,7 +26,8 @@
 #ifndef UBIRCH_API_MESSAGE_H
 #define UBIRCH_API_MESSAGE_H
 
-#include <msgpack.h>
+//#include <msgpack.h>
+#include <ubirch_protocol.h>
 
 /*!
  * Store the signature in non-volatile memory to save it for the next message.
@@ -53,22 +54,21 @@ esp_err_t ubirch_load_signature(unsigned char **signature, size_t *len);
  * This function will implicitely load the signature of the previous message and store
  * the signature of this created protocol message.
  *
- * @param sbuf a buffer structure to hold the packages data, needs to be freed after use
+ * @param upp a buffer structure to hold the packages data, needs to be freed after use
  * @param uuid the device UUID
  * @param values an array of values to send
  * @param num the number of values in the array
  * @return ESP_OK or an error code if the packaging failed
  */
-esp_err_t *ubirch_message(msgpack_sbuffer *sbuf, const unsigned char *uuid, int32_t *values, uint16_t num);
+esp_err_t *ubirch_message(ubirch_protocol *upp, int32_t *values, uint16_t num);
 
 /*!
  * TODO
- * @param sbuf
- * @param uuid
+ * @param upp
  * @param data
  * @return
  */
-esp_err_t *ubirch_message_niomon(msgpack_sbuffer *sbuf, const unsigned char *uuid, const unsigned char *data);
+esp_err_t *ubirch_message_niomon(ubirch_protocol *upp, const unsigned char *data, size_t data_len);
 
 
 #endif //UBIRCH_API_MESSAGE_H

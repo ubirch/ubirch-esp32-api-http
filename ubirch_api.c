@@ -23,12 +23,12 @@
  * limitations under the License.
  * ```
  */
+//#include <msgpack.h>
 #include <stddef.h>
 #include <esp_http_client.h>
 #include <esp_log.h>
-#include <msgpack.h>
-#include <ubirch_protocol.h>
 #include "ubirch_api.h"
+#include "mbedtls/base64.h"
 #include "../ubirch-esp32-cumulocity-client/ubirch-protocol-c8y.h" //TODO
 
 static const char *TAG = "UBIRCH API";
@@ -63,8 +63,29 @@ static esp_err_t _ubirch_http_event_handler(esp_http_client_event_t *evt) {
     return ESP_OK;
 }
 
+static char *uuid_to_string(const unsigned char *uuid) {
+    char uuid_string[36];
+    const char *format = "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x";
+    sprintf(uuid_string, format,
+            uuid[0], uuid[1], uuid[2], uuid[3], uuid[4], uuid[5], uuid[6], uuid[7],
+            uuid[8], uuid[9], uuid[10], uuid[11], uuid[12], uuid[13], uuid[14], uuid[15]
+    );
+    return strdup(uuid_string);
+}
 
-esp_err_t ubirch_send(const char *url, const char *data, const size_t length, msgpack_unpacker *unpacker) {
+static char *auth_to_base64(const char *auth) {
+    unsigned char *auth64 = NULL;
+    size_t auth64_len;
+    mbedtls_base64_encode(auth64, 0, &auth64_len,
+                          (const unsigned char *) auth, strlen(auth));
+    auth64 = malloc(auth64_len);
+    mbedtls_base64_encode(auth64, auth64_len, &auth64_len,
+                          (const unsigned char *) auth, strlen(auth));
+    return (char *) auth64;
+}
+
+esp_err_t ubirch_send(const char *url, const unsigned char *uuid, const char *data, const size_t length,
+                      msgpack_unpacker *unpacker) {
     ESP_LOGD(TAG, "ubirch_send(%s, len=%d)", url, length);
 
     esp_http_client_config_t config = {
@@ -77,9 +98,11 @@ esp_err_t ubirch_send(const char *url, const char *data, const size_t length, ms
     // POST
     esp_http_client_set_url(client, url);
     esp_http_client_set_method(client, HTTP_METHOD_POST);
-#ifdef UBIRCH_AUTH
+#ifdef CONFIG_UBIRCH_AUTH
     esp_http_client_set_header(client, "Content-Type", "application/octet-stream");
-    esp_http_client_set_header(client, "Authorization", UBIRCH_AUTH);
+    esp_http_client_set_header(client, "X-Ubirch-Hardware-Id", uuid_to_string(uuid));
+    esp_http_client_set_header(client, "X-Ubirch-Credential", auth_to_base64(CONFIG_UBIRCH_AUTH));
+    esp_http_client_set_header(client, "X-Ubirch-Auth-Type", "ubirch");
 #endif
     esp_http_client_set_post_field(client, data, (int) (length));
     esp_err_t err = esp_http_client_perform(client);
@@ -96,7 +119,9 @@ esp_err_t ubirch_send(const char *url, const char *data, const size_t length, ms
     return err;
 }
 
-esp_err_t ubirch_send_niomon(const char *url, const char *data, const size_t length, msgpack_unpacker *unpacker) {
+esp_err_t ubirch_send_niomon(const char *url, const unsigned char *uuid, const char *data, const size_t length,
+                             msgpack_unpacker *unpacker) {
+	//todo uuid is currently not in use, but is included to have the same signature as ubirch_send()
 	ESP_LOGD(TAG, "ubirch_send(%s, len=%d)", url, length);
 
 	char *authorization = NULL;

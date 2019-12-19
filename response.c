@@ -35,10 +35,10 @@ static const char *TAG = "UBIRCH API";
 
 bool match(const msgpack_object_kv *kv, const char *key, const int type) {
     const size_t keyLength = strlen(key);
-    return kv->key.type == MSGPACK_OBJECT_RAW &&
-           kv->key.via.raw.size == keyLength &&
+    return kv->key.type == MSGPACK_OBJECT_STR &&
+           kv->key.via.str.size == keyLength &&
            (type == -1 || kv->val.type == type) &&
-           !memcmp(key, kv->key.via.raw.ptr, keyLength);
+           !memcmp(key, kv->key.via.str.ptr, keyLength);
 }
 
 static void parse_measurement_reply(msgpack_object *envelope, ubirch_response_handler handler) {
@@ -58,7 +58,7 @@ void ubirch_parse_response(msgpack_unpacker *unpacker, ubirch_response_handler h
     // new unpacked result buffer
     msgpack_unpacked result;
     msgpack_unpacked_init(&result);
-//	ESP_LOG_BUFFER_HEX_LEVEL("response", unpacker->buffer, unpacker->used, ESP_LOG_INFO);
+	ESP_LOG_BUFFER_HEX_LEVEL("response", unpacker->buffer, unpacker->used, ESP_LOG_INFO);
     // unpack into result buffer and look for ARRAY
     if (msgpack_unpacker_next(unpacker, &result) && result.data.type == MSGPACK_OBJECT_ARRAY) {
         // redirect the result to the envelope
@@ -70,8 +70,8 @@ void ubirch_parse_response(msgpack_unpacker *unpacker, ubirch_response_handler h
             ESP_LOGI(TAG, "VERSION: %d (variant %d)", p_version >> 4U, p_version & 0xfU);
         }
         // get the backend UUID
-        if ((++envelope)->type == MSGPACK_OBJECT_RAW) {
-            ESP_LOG_BUFFER_HEX_LEVEL("UUID", envelope->via.raw.ptr, (uint16_t) envelope->via.raw.size, ESP_LOG_DEBUG);
+        if ((++envelope)->type == MSGPACK_OBJECT_STR) {
+            ESP_LOG_BUFFER_HEX_LEVEL("UUID", envelope->via.str.ptr, (uint16_t) envelope->via.str.size, ESP_LOG_DEBUG);
         }
         // only continue if the envelope version and variant match
         if (p_version == proto_chained) {
@@ -83,13 +83,13 @@ void ubirch_parse_response(msgpack_unpacker *unpacker, ubirch_response_handler h
             }
             // compare the previous signature to the received one
             bool last_signature_matches = false;
-            if ((++envelope)->type == MSGPACK_OBJECT_RAW) {
-                ESP_LOG_BUFFER_HEXDUMP(TAG, envelope->via.raw.ptr, (uint16_t) envelope->via.raw.size, ESP_LOG_DEBUG);
-                if (envelope->via.raw.size == crypto_sign_BYTES) {
+            if ((++envelope)->type == MSGPACK_OBJECT_STR) {
+                ESP_LOG_BUFFER_HEXDUMP(TAG, envelope->via.str.ptr, (uint16_t) envelope->via.str.size, ESP_LOG_DEBUG);
+                if (envelope->via.str.size == crypto_sign_BYTES) {
                     // if we have no last signature, accept this message, otherwise compare
                     last_signature_matches =
                             last_signature == NULL ||
-                            !memcmp(last_signature, envelope->via.raw.ptr, UBIRCH_PROTOCOL_SIGN_SIZE);
+                            !memcmp(last_signature, envelope->via.str.ptr, UBIRCH_PROTOCOL_SIGN_SIZE);
                 }
             }
             free(last_signature);
