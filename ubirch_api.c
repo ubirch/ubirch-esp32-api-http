@@ -32,6 +32,7 @@
 #include "mbedtls/base64.h"
 
 static const char *TAG = "UBIRCH API";
+//#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
 
 /*!
  * Event handler for the ubirch response. Feeds response data into a msgpack unpacker to be parsed.
