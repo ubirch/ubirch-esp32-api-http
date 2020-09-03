@@ -58,7 +58,7 @@ void ubirch_parse_response(msgpack_unpacker *unpacker, ubirch_response_handler h
     // new unpacked result buffer
     msgpack_unpacked result;
     msgpack_unpacked_init(&result);
-	ESP_LOG_BUFFER_HEX_LEVEL("response", unpacker->buffer, unpacker->used, ESP_LOG_INFO);
+    ESP_LOG_BUFFER_HEXDUMP("response", unpacker->buffer, unpacker->used, ESP_LOG_DEBUG);
     // unpack into result buffer and look for ARRAY
     if (msgpack_unpacker_next(unpacker, &result) && result.data.type == MSGPACK_OBJECT_ARRAY) {
         // redirect the result to the envelope
@@ -71,7 +71,7 @@ void ubirch_parse_response(msgpack_unpacker *unpacker, ubirch_response_handler h
         }
         // get the backend UUID
         if ((++envelope)->type == MSGPACK_OBJECT_STR) {
-            ESP_LOG_BUFFER_HEX_LEVEL("UUID", envelope->via.str.ptr, (uint16_t) envelope->via.str.size, ESP_LOG_DEBUG);
+            ESP_LOG_BUFFER_HEXDUMP("UUID", envelope->via.str.ptr, (uint16_t) envelope->via.str.size, ESP_LOG_DEBUG);
         }
         // only continue if the envelope version and variant match
         if (p_version == proto_chained) {

@@ -30,6 +30,9 @@
 #include <storage.h>
 #include <esp_log.h>
 #include "message.h"
+#include "api-http-helper.h"
+
+//#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
 
 static const char *TAG = "MESSAGE";
 
@@ -82,8 +85,19 @@ esp_err_t *ubirch_message(ubirch_protocol *upp, int32_t *values, uint16_t num) {
         msgpack_pack_int32(&pk, values[i]);
     }
 
-    // create ubirch protocol message
-    ubirch_protocol_message(upp, proto_chained, UBIRCH_PROTOCOL_TYPE_MSGPACK, sbuf.data, sbuf.size);
+	// make a hash of the payload
+	unsigned char sha512sum[UBIRCH_PROTOCOL_SIGN_SIZE];
+	mbedtls_sha512((const unsigned char *) sbuf.data, sbuf.size, sha512sum, 0);
+
+	char *base64_hash = str_to_base64((const char *) sha512sum, UBIRCH_PROTOCOL_SIGN_SIZE);
+	ESP_LOGI("HASH","%s",base64_hash);
+	free(base64_hash);
+
+	// create ubirch protocol message
+    ubirch_protocol_message(upp, proto_chained, UBIRCH_PROTOCOL_TYPE_BIN, (const char *)sha512sum, UBIRCH_PROTOCOL_SIGN_SIZE);
+
+    // destroy the buffers
+	msgpack_sbuffer_destroy(&sbuf);
 
     // store signature of the new message
     ubirch_store_signature(upp->signature, UBIRCH_PROTOCOL_SIGN_SIZE);

@@ -2,6 +2,7 @@ set(COMPONENT_SRCS
         ubirch_api.c
         message.c
         response.c
+        api-http-helper.c
         )
 set(COMPONENT_ADD_INCLUDEDIRS ".")
 set(COMPONENT_REQUIRES ubirch-protocol ubirch-esp32-storage)
