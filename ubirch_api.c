@@ -63,7 +63,7 @@ static esp_err_t _ubirch_http_event_handler(esp_http_client_event_t *evt) {
 }
 
 static char *uuid_to_string(const unsigned char *uuid) {
-    char uuid_string[36];
+    char uuid_string[37];
     const char *format = "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x";
     sprintf(uuid_string, format,
             uuid[0], uuid[1], uuid[2], uuid[3], uuid[4], uuid[5], uuid[6], uuid[7],
