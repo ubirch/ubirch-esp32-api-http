@@ -26,6 +26,8 @@
 #ifndef API_RESPONSE_H
 #define API_RESPONSE_H
 
+#include <ubirch_protocol.h>
+
 /*!
  * ubirch response handler function, which receives msgpack key/value entries to evaluate.
  */
@@ -40,6 +42,33 @@ typedef void (*ubirch_response_handler)(const msgpack_object_kv *entry);
  * @param handler a handler for individual response values
  */
 void ubirch_parse_response(msgpack_unpacker *unpacker, ubirch_response_handler handler);
+
+/*
+ * TODO: probably name it differently
+ */
+typedef enum {
+    UBIRCH_ESP32_API_HTTP_RESPONSE_SUCCESS = 0,
+    UBIRCH_ESP32_API_HTTP_RESPONSE_ERROR,
+} ubirch_esp32_api_http_response_t;
+
+/*!
+ * TODO: fix name!
+ */
+typedef void (*ubirch_response_bin_data_handler)(const void* data, const size_t len);
+
+/*
+ * Parse a msgpack response that contains a ubirch-protocol message.
+ * The function expects
+ *      1. proto_chained type
+ *      2. matching previous signature
+ *      3. payload of binary type UBIRCH_PROTOCOL_TYPE_BIN
+ * otherwise it will not call the handler on this binary data.
+ *
+ * @param unpacker the unpacker holding unparsed data
+ * @param handler a handler for the received payload
+ * @return ..._SUCCESS if the above is matched, else ..._ERROR
+ */
+int ubirch_parse_backend_response(msgpack_unpacker *unpacker, ubirch_response_bin_data_handler handler);
 
 /*!
  * Helper function, checking a specific key in a msgpack key/value object.
