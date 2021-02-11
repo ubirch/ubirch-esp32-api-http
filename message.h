@@ -26,6 +26,7 @@
 #ifndef UBIRCH_API_MESSAGE_H
 #define UBIRCH_API_MESSAGE_H
 
+#include <esp_err.h>
 #include <msgpack.h>
 #include <ubirch_protocol.h>
 

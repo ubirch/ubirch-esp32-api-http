@@ -24,6 +24,7 @@
  * ```
  */
 #include <msgpack.h>
+#include <esp_err.h>
 #include <esp_log.h>
 #include <ubirch_protocol.h>
 #include <ubirch_ed25519.h>
