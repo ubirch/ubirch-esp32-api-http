@@ -35,6 +35,15 @@ static const char *TAG = "UBIRCH API";
 //#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
 
 /*!
+ * Used locally to pass verifier with unpacker to the http-event-handler.
+ */
+typedef struct {
+    msgpack_unpacker* unpacker;
+    ubirch_protocol_check verifier;
+    bool verified;
+} http_event_user_data_context_t;
+
+/*!
  * Event handler for the ubirch response. Feeds response data into a msgpack unpacker to be parsed.
  * 
  * @param evt, which calls this handler
@@ -44,10 +53,22 @@ static esp_err_t _ubirch_http_event_handler(esp_http_client_event_t *evt) {
     if (evt->event_id == HTTP_EVENT_ON_DATA) {
         ESP_LOGD(TAG, "HTTP received %d byte", evt->data_len);
         ESP_LOG_BUFFER_HEXDUMP(TAG, evt->data, (uint16_t) evt->data_len, ESP_LOG_DEBUG);
+        http_event_user_data_context_t* ctx = evt->user_data;
+
+        // verify if there's a verifier and proceed only if received data is verifiable
+        if (ctx->verifier != NULL) {
+            if (ubirch_protocol_verify(evt->data, evt->data_len, ctx->verifier) == 0) {
+                ctx->verified = true;
+            } else {
+                // FIXME: As error message?
+                ESP_LOGE(TAG, "verification of received data failed");
+                return ESP_FAIL;
+            }
+        }
 
         // only feed data if the unpacker is available
-        if (evt->user_data != NULL) {
-            msgpack_unpacker *unpacker = evt->user_data;
+        if (ctx->unpacker != NULL) {
+            msgpack_unpacker *unpacker = ctx->unpacker;
 
             if (!esp_http_client_is_chunked_response(evt->client)) {
                 ESP_LOG_BUFFER_HEXDUMP(TAG, evt->data, (uint16_t) evt->data_len, ESP_LOG_DEBUG);
@@ -83,14 +104,18 @@ static char *auth_to_base64(const char *auth) {
     return (char *) auth64;
 }
 
-esp_err_t ubirch_send(const char *url, const unsigned char *uuid, const char *data, const size_t length,
-                      msgpack_unpacker *unpacker) {
+ubirch_send_err_t ubirch_send(const char *url, const unsigned char *uuid, const char *data, const size_t length,
+        int* http_status, msgpack_unpacker *unpacker, ubirch_protocol_check verifier) {
     ESP_LOGD(TAG, "ubirch_send(%s, len=%d)", url, length);
-
+    http_event_user_data_context_t event_context = {
+            .unpacker = unpacker,
+            .verifier = verifier,
+            .verified = false
+    };
     esp_http_client_config_t config = {
             .url = url,
             .event_handler = _ubirch_http_event_handler,
-            .user_data = unpacker
+            .user_data = &event_context
     };
     esp_http_client_handle_t client = esp_http_client_init(&config);
 
@@ -105,15 +130,18 @@ esp_err_t ubirch_send(const char *url, const unsigned char *uuid, const char *da
 #endif
     esp_http_client_set_post_field(client, data, (int) (length));
     esp_err_t err = esp_http_client_perform(client);
+    ubirch_send_err_t return_code = UBIRCH_SEND_OK;
     if (err == ESP_OK) {
-        const int http_status = esp_http_client_get_status_code(client);
+        *http_status = esp_http_client_get_status_code(client);
         const int content_length = esp_http_client_get_content_length(client);
-        ESP_LOGI(TAG, "HTTP POST status = %d, content_length = %d", http_status, content_length);
-        err = (http_status >= 200 && http_status <= 299) ? ESP_OK : ESP_FAIL;
+        ESP_LOGI(TAG, "HTTP POST status = %d, content_length = %d", *http_status, content_length);
+        if (event_context.verifier != NULL && !event_context.verified) {
+            return_code = UBIRCH_SEND_VERIFICATION_FAILED;
+        }
     } else {
         ESP_LOGE(TAG, "HTTP POST request failed: %s", esp_err_to_name(err));
+        return_code = UBIRCH_SEND_ERROR;
     }
-
     esp_http_client_cleanup(client);
-    return err;
+    return return_code;
 }
