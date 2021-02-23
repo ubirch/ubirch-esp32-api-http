@@ -43,7 +43,8 @@ typedef void (*ubirch_response_handler)(const msgpack_object_kv *entry);
  */
 void ubirch_parse_response(msgpack_unpacker *unpacker, ubirch_response_handler handler);
 
-/*
+/*!
+ * Return type for ubirch_parse_backend_response
  * TODO: probably name it differently
  */
 typedef enum {
@@ -52,7 +53,8 @@ typedef enum {
 } ubirch_esp32_api_http_response_t;
 
 /*!
- * TODO: fix name!
+ * Callback type for ubirch_parse_backend_response. To be called on binary data.
+ * TODO: probably name it differently
  */
 typedef void (*ubirch_response_bin_data_handler)(const void* data, const size_t len);
 

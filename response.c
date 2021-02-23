@@ -121,13 +121,7 @@ void ubirch_parse_response(msgpack_unpacker *unpacker, ubirch_response_handler h
     msgpack_unpacked_destroy(&result);
 }
 
-/*
- * TODO:
- *  - [o] specify return values
- *  - [X] check protocol type
- *  - [X] check previous signature
- *  - [X] check payload type
- */
+
 int ubirch_parse_backend_response(msgpack_unpacker *unpacker, ubirch_response_bin_data_handler handler) {
     // new unpacked result buffer
     msgpack_unpacked result;

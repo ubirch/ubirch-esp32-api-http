@@ -60,8 +60,7 @@ static esp_err_t _ubirch_http_event_handler(esp_http_client_event_t *evt) {
             if (ubirch_protocol_verify(evt->data, evt->data_len, ctx->verifier) == 0) {
                 ctx->verified = true;
             } else {
-                // FIXME: As error message?
-                ESP_LOGE(TAG, "verification of received data failed");
+                ESP_LOGD(TAG, "verification of received data failed");
                 return ESP_FAIL;
             }
         }
@@ -134,12 +133,12 @@ ubirch_send_err_t ubirch_send(const char *url, const unsigned char *uuid, const 
     if (err == ESP_OK) {
         *http_status = esp_http_client_get_status_code(client);
         const int content_length = esp_http_client_get_content_length(client);
-        ESP_LOGI(TAG, "HTTP POST status = %d, content_length = %d", *http_status, content_length);
+        ESP_LOGD(TAG, "HTTP POST status = %d, content_length = %d", *http_status, content_length);
         if (event_context.verifier != NULL && !event_context.verified) {
             return_code = UBIRCH_SEND_VERIFICATION_FAILED;
         }
     } else {
-        ESP_LOGE(TAG, "HTTP POST request failed: %s", esp_err_to_name(err));
+        ESP_LOGD(TAG, "HTTP POST request failed: %s", esp_err_to_name(err));
         return_code = UBIRCH_SEND_ERROR;
     }
     esp_http_client_cleanup(client);

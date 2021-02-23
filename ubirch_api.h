@@ -32,8 +32,8 @@
 #define MSGPACK_MSG_REPLY 85
 #define MSGPACK_MSG_UBIRCH 50
 
-/*
- * TODO
+/*!
+ * Return type for the ubirch_send function.
  */
 typedef enum {
     UBIRCH_SEND_OK,
@@ -52,7 +52,7 @@ typedef enum {
  *        if a verifier is not given or it can verify the received data.
  * @param verifier a ubirch_protocol_check verification function or NULL
  * @return ESP_OK
- * @return ESP_FAIL if verification failed
+ * @return ESP_FAIL if verifier is given and verification failed
  * @return ESP_OK on other error
  */
 ubirch_send_err_t ubirch_send(const char *url, const unsigned char *uuid, const char *data, const size_t length,
