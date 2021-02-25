@@ -26,21 +26,36 @@
 #ifndef UBIRCH_API_H
 #define UBIRCH_API_H
 
-#include <esp_err.h>
 #include <msgpack.h>
+#include <ubirch_protocol.h>
 
 #define MSGPACK_MSG_REPLY 85
 #define MSGPACK_MSG_UBIRCH 50
 
 /*!
+ * Return type for the ubirch_send function.
+ */
+typedef enum {
+    UBIRCH_SEND_OK,
+    UBIRCH_SEND_VERIFICATION_FAILED,
+    UBIRCH_SEND_ERROR
+} ubirch_send_err_t;
+
+/*!
  * Send data to the ubirch backend.
  * @param url The backend url.
- * @param data the msgpack encoded data to send
- * @param length the length of the data packet
- * @param unpacker a msgpack unpacker to feed the response to
- * @return ESP_OK or an error code
+ * @param uuid The client uuid.
+ * @param data The msgpack encoded data to send.
+ * @param length The length of the data packet.
+ * @param http_status The http status of the backend response.
+ * @param unpacker The msgpack unpacker to feed the response to
+ *        if a verifier is not given or it can verify the received data.
+ * @param verifier a ubirch_protocol_check verification function or NULL
+ * @return UBIRCH_SEND_OK
+ *         UBIRCH_SEND_VERIFICATION_FAILED if verifier is given and verification failed
+ *         UBIRCH_SEND_ERROR if any error occured
  */
-esp_err_t ubirch_send(const char *url, const unsigned char *uuid, const char *data, const size_t length,
-                      msgpack_unpacker *unpacker);
+ubirch_send_err_t ubirch_send(const char *url, const unsigned char *uuid, const char *data, const size_t length,
+        int* http_status, msgpack_unpacker *unpacker, ubirch_protocol_check verifier);
 
 #endif //UBIRCH_API_H

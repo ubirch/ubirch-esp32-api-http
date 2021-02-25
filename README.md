@@ -16,7 +16,6 @@ The following components are required for the functionality, see also
 ## Example
 
 This is an example code snippet to send a message in the ubirch format to the backend.
-It is implemented in the [example application](https://github.com/ubirch/example-esp32/blob/master/main/sensor.c#L61-L75)
 
 ```c
 // create buffer and allocate memory space
@@ -29,11 +28,39 @@ int32_t values[2] = {(int32_t) (temperature * 100), (int32_t) (humidity * 100)};
 // create a message
 ubirch_message(sbuf, UUID, values, sizeof(values) / sizeof(values[0]));
 // send the message
-ubirch_send(CONFIG_UBIRCH_BACKEND_DATA_URL, sbuf->data, sbuf->size, unpacker);
+int http_status;
+ubirch_send(CONFIG_UBIRCH_BACKEND_DATA_URL, sbuf->data, sbuf->size, &http_status, unpacker, NULL);
 // parse the message response
 ubirch_parse_response(unpacker, response_handler);
 
 // free the allocated memory space
 msgpack_unpacker_free(unpacker);
 msgpack_sbuffer_free(sbuf);
+```
+
+If you want to verify and handle the backend response you additionally need a verifier and a response handler callback.
+It is implemented in the [example application](https://github.com/ubirch/example-esp32/blob/master/main/sensor.c)
+
+```c
+static int ed25519_verify_backend_response(const unsigned char *data,
+        size_t len, const unsigned char signature[UBIRCH_PROTOCOL_SIGN_SIZE]) {
+    return ed25519_verify_key(data, len, signature, server_pub_key);
+}
+
+void bin_response_handler(const void* data, size_t len) {
+    ESP_LOG_BUFFER_HEXDUMP("response UPP payload", data, len, ESP_LOG_INFO);
+}
+```
+
+Those have to be passed to `ubirch_send` and `ubirch_parse_backend_response`.
+
+```c
+// [...]
+// send the message
+int http_status;
+ubirch_send(CONFIG_UBIRCH_BACKEND_DATA_URL, sbuf->data, sbuf->size, &http_status, unpacker, ed25519_verify_backend_response);
+
+// parse backend response
+ubirch_parse_backend_response(unpacker, bin_response_handler);
+// [...]
 ```
