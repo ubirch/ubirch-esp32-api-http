@@ -35,12 +35,12 @@ void response_handler(const void* data, const size_t len) {
     ESP_LOG_BUFFER_HEXDUMP("response handler data", data, len, ESP_LOG_DEBUG);
 }
 
-static int ed25519_verify_test0(const unsigned char *data, size_t len,
+static int ed25519_verify_signature_from_device_test(const unsigned char *data, size_t len,
         const unsigned char signature[UBIRCH_PROTOCOL_SIGN_SIZE]) {
     return ed25519_verify_key(data, len, signature, test_ed25519_public_key);
 }
 
-static int ed25519_verify_test1(const unsigned char *data, size_t len,
+static int ed25519_verify_signature_from_backend_test(const unsigned char *data, size_t len,
         const unsigned char signature[UBIRCH_PROTOCOL_SIGN_SIZE]) {
     return ed25519_verify_key(data, len, signature, server_public_key);
 }
@@ -146,14 +146,14 @@ TEST_CASE("simple", "[response]")
     ubirch_store_signature(prev_sig, UBIRCH_PROTOCOL_SIGN_SIZE);
     // test message
     TEST_ASSERT_EQUAL_INT(UBIRCH_ESP32_API_HTTP_RESPONSE_SUCCESS,
-            test_ubirch_parse_backend_response(data0, sizeof(data0), ed25519_verify_test0));
+            test_ubirch_parse_backend_response(data0, sizeof(data0), ed25519_verify_signature_from_device_test));
 
     // store previous signature
     prev_sig = (unsigned char*)data1 + PREVIOUS_SIGNATURE_START;
     ubirch_store_signature(prev_sig, UBIRCH_PROTOCOL_SIGN_SIZE);
     // test message
     TEST_ASSERT_EQUAL_INT(UBIRCH_ESP32_API_HTTP_RESPONSE_SUCCESS,
-            test_ubirch_parse_backend_response(data1, sizeof(data1), ed25519_verify_test1));
+            test_ubirch_parse_backend_response(data1, sizeof(data1), ed25519_verify_signature_from_backend_test));
 }
 
 TEST_CASE("wrong data", "[response]")
@@ -202,5 +202,5 @@ TEST_CASE("wrong data", "[response]")
 
     // test message
     TEST_ASSERT_EQUAL_INT(UBIRCH_ESP32_API_HTTP_RESPONSE_ERROR,
-            test_ubirch_parse_backend_response(data1, sizeof(data1), ed25519_verify_test1));
+            test_ubirch_parse_backend_response(data1, sizeof(data1), ed25519_verify_signature_from_backend_test));
 }
