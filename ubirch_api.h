@@ -51,9 +51,9 @@ typedef enum {
  * @param unpacker The msgpack unpacker to feed the response to
  *        if a verifier is not given or it can verify the received data.
  * @param verifier a ubirch_protocol_check verification function or NULL
- * @return ESP_OK
- * @return ESP_FAIL if verifier is given and verification failed
- * @return ESP_OK on other error
+ * @return UBIRCH_SEND_OK
+ *         UBIRCH_SEND_VERIFICATION_FAILED if verifier is given and verification failed
+ *         UBIRCH_SEND_ERROR if any error occured
  */
 ubirch_send_err_t ubirch_send(const char *url, const unsigned char *uuid, const char *data, const size_t length,
         int* http_status, msgpack_unpacker *unpacker, ubirch_protocol_check verifier);
