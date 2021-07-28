@@ -24,6 +24,7 @@
  * ```
  */
 #include <stddef.h>
+#include <assert.h>
 #include <esp_http_client.h>
 #include <esp_log.h>
 #include <msgpack.h>
@@ -82,14 +83,13 @@ static esp_err_t _ubirch_http_event_handler(esp_http_client_event_t *evt) {
     return ESP_OK;
 }
 
-static char *uuid_to_string(const unsigned char *uuid) {
-    char uuid_string[37];
+void uuid_to_string(const unsigned char *uuid, char *buffer, size_t len) {
+    assert(len >= 37);
     const char *format = "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x";
-    sprintf(uuid_string, format,
+    sprintf(buffer, format,
             uuid[0], uuid[1], uuid[2], uuid[3], uuid[4], uuid[5], uuid[6], uuid[7],
             uuid[8], uuid[9], uuid[10], uuid[11], uuid[12], uuid[13], uuid[14], uuid[15]
     );
-    return strdup(uuid_string);
 }
 
 static char *auth_to_base64(const char *auth) {
@@ -122,9 +122,13 @@ ubirch_send_err_t ubirch_send(const char *url, const unsigned char *uuid, const 
     esp_http_client_set_url(client, url);
     esp_http_client_set_method(client, HTTP_METHOD_POST);
 #ifdef CONFIG_UBIRCH_AUTH
+    char uuid_string[37];
+    uuid_to_string(uuid, uuid_string, sizeof(uuid_string));
+    char *auth_string = auth_to_base64(CONFIG_UBIRCH_AUTH);
+
     esp_http_client_set_header(client, "Content-Type", "application/octet-stream");
-    esp_http_client_set_header(client, "X-Ubirch-Hardware-Id", uuid_to_string(uuid));
-    esp_http_client_set_header(client, "X-Ubirch-Credential", auth_to_base64(CONFIG_UBIRCH_AUTH));
+    esp_http_client_set_header(client, "X-Ubirch-Hardware-Id", uuid_string);
+    esp_http_client_set_header(client, "X-Ubirch-Credential", auth_string);
     esp_http_client_set_header(client, "X-Ubirch-Auth-Type", "ubirch");
 #endif
     esp_http_client_set_post_field(client, data, (int) (length));
@@ -142,5 +146,8 @@ ubirch_send_err_t ubirch_send(const char *url, const unsigned char *uuid, const 
         return_code = UBIRCH_SEND_ERROR;
     }
     esp_http_client_cleanup(client);
+#ifdef CONFIG_UBIRCH_AUTH
+    free(auth_string);
+#endif
     return return_code;
 }
