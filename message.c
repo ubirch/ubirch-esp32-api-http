@@ -36,28 +36,6 @@
 
 static const char *TAG = "MESSAGE";
 
-esp_err_t ubirch_load_signature(unsigned char **signature, size_t *len) {
-    esp_err_t err;
-
-    err = kv_load("sign_storage", "signature", (void **) signature, len);
-    if (err != ESP_OK) {
-        ESP_LOGW(TAG, "error loading the last signature");
-    }
-
-    return err;
-}
-
-esp_err_t ubirch_store_signature(unsigned char *signature, size_t len) {
-    esp_err_t err;
-
-    err = kv_store("sign_storage", "signature", signature, len);
-    if (err != ESP_OK) {
-        ESP_LOGW(TAG, "error storing the signature");
-    }
-
-    return err;
-}
-
 esp_err_t *ubirch_message(ubirch_protocol *upp, int32_t *values, uint16_t num) {
     // load the signature of the previously sent message and copy it to the protocol context
     unsigned char *last_signature = NULL;

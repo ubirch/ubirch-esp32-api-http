@@ -31,26 +31,6 @@
 #include <ubirch_protocol.h>
 
 /*!
- * Store the signature in non-volatile memory to save it for the next message.
- *
- * @param signature the signature byte array
- * @param len the length of the signature
- * @return ESP_OK or an error code
- */
-esp_err_t ubirch_store_signature(unsigned char *signature, size_t len);
-
-/*!
- * Load the last stored signature from non-volatile memory.
- * This function internally allocates the memory required for the signature. Needs to be freed
- * after use.
- *
- * @param signature a pointer to the target signature pointer
- * @param len a pointer to a length variable where the loaded length is stored in
- * @return ESP_OK or an error code
- */
-esp_err_t ubirch_load_signature(unsigned char **signature, size_t *len);
-
-/*!
  * Create a new ubirch API message from the UUID and an array of sensor values.
  * This function will implicitely load the signature of the previous message and store
  * the signature of this created protocol message.
