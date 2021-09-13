@@ -7,6 +7,7 @@
 #include "storage.h"
 #include "ubirch_protocol.h"
 #include <ubirch_ed25519.h>
+#include "id_handling.h"
 
 static const char *TAG = "UBIRCH API TEST RESPONSE";
 
@@ -141,16 +142,17 @@ TEST_CASE("simple", "[response]")
     };
 
     init_nvs();
+    ubirch_id_context_add("default");
     // store previous signature
     unsigned char* prev_sig = (unsigned char*)data0 + PREVIOUS_SIGNATURE_START;
-    ubirch_store_signature(prev_sig, UBIRCH_PROTOCOL_SIGN_SIZE);
+    ubirch_previous_signature_set(prev_sig, UBIRCH_PROTOCOL_SIGN_SIZE);
     // test message
     TEST_ASSERT_EQUAL_INT(UBIRCH_ESP32_API_HTTP_RESPONSE_SUCCESS,
             test_ubirch_parse_backend_response(data0, sizeof(data0), ed25519_verify_signature_from_device_test));
 
     // store previous signature
     prev_sig = (unsigned char*)data1 + PREVIOUS_SIGNATURE_START;
-    ubirch_store_signature(prev_sig, UBIRCH_PROTOCOL_SIGN_SIZE);
+    ubirch_previous_signature_set(prev_sig, UBIRCH_PROTOCOL_SIGN_SIZE);
     // test message
     TEST_ASSERT_EQUAL_INT(UBIRCH_ESP32_API_HTTP_RESPONSE_SUCCESS,
             test_ubirch_parse_backend_response(data1, sizeof(data1), ed25519_verify_signature_from_backend_test));
@@ -197,7 +199,7 @@ TEST_CASE("wrong data", "[response]")
     memcpy(prev_sig, data1 + PREVIOUS_SIGNATURE_START, UBIRCH_PROTOCOL_SIGN_SIZE);
     // break previous signature in data
     prev_sig[7]++;
-    ubirch_store_signature(prev_sig, UBIRCH_PROTOCOL_SIGN_SIZE);
+    ubirch_previous_signature_set(prev_sig, UBIRCH_PROTOCOL_SIGN_SIZE);
 
 
     // test message
