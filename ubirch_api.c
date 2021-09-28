@@ -122,7 +122,7 @@ ubirch_send_err_t ubirch_send(const char *url, const unsigned char *uuid, const 
     // POST
     esp_http_client_set_url(client, url);
     esp_http_client_set_method(client, HTTP_METHOD_POST);
-#ifdef CONFIG_UBIRCH_AUTH
+
     char uuid_string[37];
     uuid_to_string(uuid, uuid_string, sizeof(uuid_string));
 
@@ -137,7 +137,7 @@ ubirch_send_err_t ubirch_send(const char *url, const unsigned char *uuid, const 
     esp_http_client_set_header(client, "X-Ubirch-Hardware-Id", uuid_string);
     esp_http_client_set_header(client, "X-Ubirch-Credential", auth_string);
     esp_http_client_set_header(client, "X-Ubirch-Auth-Type", "ubirch");
-#endif
+
     esp_http_client_set_post_field(client, data, (int) (length));
     esp_err_t err = esp_http_client_perform(client);
     ubirch_send_err_t return_code = UBIRCH_SEND_OK;
@@ -153,9 +153,8 @@ ubirch_send_err_t ubirch_send(const char *url, const unsigned char *uuid, const 
         return_code = UBIRCH_SEND_ERROR;
     }
     esp_http_client_cleanup(client);
-#ifdef CONFIG_UBIRCH_AUTH
     free(auth_string);
-#endif
+
     return return_code;
 }
 
