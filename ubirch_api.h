@@ -58,4 +58,7 @@ typedef enum {
 ubirch_send_err_t ubirch_send(const char *url, const unsigned char *uuid, const char *data, const size_t length,
         int* http_status, msgpack_unpacker *unpacker, ubirch_protocol_check verifier);
 
+ubirch_send_err_t ubirch_send_json(const char *url, const unsigned char *uuid, const char *data, const size_t length,
+        int* http_status, msgpack_unpacker *unpacker, ubirch_protocol_check verifier);
+
 #endif //UBIRCH_API_H
