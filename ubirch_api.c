@@ -151,3 +151,42 @@ ubirch_send_err_t ubirch_send(const char *url, const unsigned char *uuid, const 
 #endif
     return return_code;
 }
+
+ubirch_send_err_t ubirch_send_json(const char *url, const unsigned char *uuid,
+        const char *data, const size_t length, int* http_status, msgpack_unpacker *unpacker, ubirch_protocol_check verifier) {
+    ESP_LOGD(TAG, "ubirch_send(%s, len=%d)", url, length);
+    http_event_user_data_context_t event_context = {
+            .unpacker = unpacker,
+            .verifier = verifier,
+            .verified = false
+    };
+    esp_http_client_config_t config = {
+            .url = url,
+            .event_handler = _ubirch_http_event_handler,
+            .user_data = &event_context,
+            .buffer_size = 1024,
+            .buffer_size_tx = 1024
+    };
+    esp_http_client_handle_t client = esp_http_client_init(&config);
+
+    // POST
+    esp_http_client_set_url(client, url);
+    esp_http_client_set_method(client, HTTP_METHOD_POST);
+    esp_http_client_set_header(client, "Content-Type", "application/json");
+    esp_http_client_set_post_field(client, data, (int) (length));
+    esp_err_t err = esp_http_client_perform(client);
+    ubirch_send_err_t return_code = UBIRCH_SEND_OK;
+    if (err == ESP_OK) {
+        *http_status = esp_http_client_get_status_code(client);
+        const int content_length = esp_http_client_get_content_length(client);
+        ESP_LOGD(TAG, "HTTP POST status = %d, content_length = %d", *http_status, content_length);
+        if (event_context.verifier != NULL && !event_context.verified) {
+            return_code = UBIRCH_SEND_VERIFICATION_FAILED;
+        }
+    } else {
+        ESP_LOGD(TAG, "HTTP POST request failed: %s", esp_err_to_name(err));
+        return_code = UBIRCH_SEND_ERROR;
+    }
+    esp_http_client_cleanup(client);
+    return return_code;
+}
