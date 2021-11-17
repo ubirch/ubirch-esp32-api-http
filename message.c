@@ -31,42 +31,20 @@
 #include <esp_log.h>
 #include "message.h"
 #include "api-http-helper.h"
+#include "id_handling.h"
 
 //#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
 
 static const char *TAG = "MESSAGE";
 
-esp_err_t ubirch_load_signature(unsigned char **signature, size_t *len) {
-    esp_err_t err;
-
-    err = kv_load("sign_storage", "signature", (void **) signature, len);
-    if (err != ESP_OK) {
-        ESP_LOGW(TAG, "error loading the last signature");
-    }
-
-    return err;
-}
-
-esp_err_t ubirch_store_signature(unsigned char *signature, size_t len) {
-    esp_err_t err;
-
-    err = kv_store("sign_storage", "signature", signature, len);
-    if (err != ESP_OK) {
-        ESP_LOGW(TAG, "error storing the signature");
-    }
-
-    return err;
-}
-
 esp_err_t *ubirch_message(ubirch_protocol *upp, int32_t *values, uint16_t num) {
     // load the signature of the previously sent message and copy it to the protocol context
     unsigned char *last_signature = NULL;
     size_t last_signature_len = 0;
-    ubirch_load_signature(&last_signature, &last_signature_len);
+    ubirch_previous_signature_get(&last_signature, &last_signature_len);
     if (last_signature != NULL && last_signature_len == UBIRCH_PROTOCOL_SIGN_SIZE) {
         memcpy(upp->signature, last_signature, UBIRCH_PROTOCOL_SIGN_SIZE);
     }
-    free(last_signature);
 
     // create and initialize buffer and packer for msgpack type payload
     msgpack_sbuffer sbuf; /* buffer */
@@ -100,7 +78,8 @@ esp_err_t *ubirch_message(ubirch_protocol *upp, int32_t *values, uint16_t num) {
 	msgpack_sbuffer_destroy(&sbuf);
 
     // store signature of the new message
-    ubirch_store_signature(upp->signature, UBIRCH_PROTOCOL_SIGN_SIZE);
+    ubirch_previous_signature_set(upp->signature, UBIRCH_PROTOCOL_SIGN_SIZE);
+    ubirch_id_context_store();
 
     ESP_LOG_BUFFER_HEXDUMP(TAG, upp->data, (uint16_t) upp->size, ESP_LOG_DEBUG);
 

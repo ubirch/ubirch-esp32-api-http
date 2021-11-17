@@ -10,7 +10,7 @@ The following components are required for the functionality, see also
 [CMakeLists.txt](https://github.com/ubirch/ubirch-esp32-api-http/blob/master/CMakeLists.txt)
 
 - [ubirch-protocol](https://github.com/ubirch/ubirch-protocol.git)
-- [ubirch-esp32-storage](https://github.com/ubirch/ubirch-esp32-storage)
+- [ubirch-esp32-key-storage](https://github.com/ubirch/ubirch-esp32-key-storage)
 - [esp_http_client](https://github.com/espressif/esp-idf/tree/master/components/esp_http_client)
 
 ## Example
@@ -64,3 +64,7 @@ ubirch_send(CONFIG_UBIRCH_BACKEND_DATA_URL, sbuf->data, sbuf->size, &http_status
 ubirch_parse_backend_response(unpacker, bin_response_handler);
 // [...]
 ```
+
+To create, register a new key-pair or update an existing one use `create_keys`, `register_keys` or `update_keys` from [`keys.h`](https://github.com/ubirch/ubirch-esp32-api-http/blob/master/keys.h), for an [example](example) usage see [here](https://github.com/ubirch/example-esp32/blob/master/main/main.c).
+Note that all of these three functions change the state of the current ID context which is selected and modified by the
+functions from [`id_handling.h`](https://github.com/ubirch/ubirch-esp32-key-storage/blob/master/id_handling.h).

@@ -32,6 +32,7 @@
 #include "ubirch_api.h"
 #include "response.h"
 #include "message.h"
+#include "id_handling.h"
 
 static const char *TAG = "UBIRCH API";
 
@@ -80,7 +81,7 @@ void ubirch_parse_response(msgpack_unpacker *unpacker, ubirch_response_handler h
             // previous message signature (from our request message)
             unsigned char *last_signature = NULL;
             size_t last_signature_len = 0;
-            if (ubirch_load_signature(&last_signature, &last_signature_len) != ESP_OK) {
+            if (ubirch_previous_signature_get(&last_signature, &last_signature_len) != ESP_OK) {
                 ESP_LOGW(TAG, "error loading last signature");
             }
             // compare the previous signature to the received one
@@ -94,7 +95,6 @@ void ubirch_parse_response(msgpack_unpacker *unpacker, ubirch_response_handler h
                             !memcmp(last_signature, envelope->via.str.ptr, UBIRCH_PROTOCOL_SIGN_SIZE);
                 }
             }
-            free(last_signature);
             // only continue, if the signatures match
             if (last_signature_matches && (++envelope)->type == MSGPACK_OBJECT_POSITIVE_INTEGER) {
                 ESP_LOGI(TAG, "TYPE: %d", (unsigned int) envelope->via.u64);
@@ -151,7 +151,7 @@ int ubirch_parse_backend_response(msgpack_unpacker *unpacker, ubirch_response_bi
             unsigned char *last_signature = NULL;
             size_t last_signature_len = 0;
             bool last_signature_matches = false;
-            if (ubirch_load_signature(&last_signature, &last_signature_len) == ESP_OK) {
+            if (ubirch_previous_signature_get(&last_signature, &last_signature_len) == ESP_OK) {
                 if ((++envelope)->type == MSGPACK_OBJECT_BIN) {
                     ESP_LOG_BUFFER_HEXDUMP(TAG, envelope->via.str.ptr, (uint16_t) envelope->via.str.size, ESP_LOG_DEBUG);
                     if (envelope->via.str.size == crypto_sign_BYTES) {
@@ -162,7 +162,6 @@ int ubirch_parse_backend_response(msgpack_unpacker *unpacker, ubirch_response_bi
             } else {
                 ESP_LOGW(TAG, "error loading last signature");
             }
-            free(last_signature);
             // compare the previous signature to the received one
             // only continue, if the signatures match
             if (last_signature_matches && (++envelope)->type == MSGPACK_OBJECT_POSITIVE_INTEGER) {
