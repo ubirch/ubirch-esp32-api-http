@@ -75,12 +75,12 @@ void create_keys(void) {
     // create key registration info
     ubirch_key_info info = {};
     info.algorithm = (char *) (UBIRCH_KEX_ALG_ECC_ED25519);
-    info.created = (unsigned int) time(NULL);                           // current time of the system
+    info.created = (int64_t) time(NULL);                           // current time of the system
     memcpy(info.hwDeviceId, uuid, uuid_len);                        // 16 Byte unique hardware device ID
     memcpy(info.pubKey, public_key, sizeof(public_key));// the public key
-    info.validNotAfter = (unsigned int) (time(NULL) +
+    info.validNotAfter = (int64_t) ((int64_t)time(NULL) +
                                          KEY_LIFETIME_IN_SECONDS);      // time until the key will be valid (now + 1 year)
-    info.validNotBefore = (unsigned int) time(NULL);                    // time from when the key will be valid (now)
+    info.validNotBefore = (int64_t) time(NULL);                    // time from when the key will be valid (now)
 
     // create protocol context
     ubirch_protocol *upp = ubirch_protocol_new(uuid, ed25519_sign);
@@ -98,7 +98,21 @@ void create_keys(void) {
 
     ubirch_id_state_set(UBIRCH_ID_STATE_KEYS_CREATED, true);
     ubirch_id_state_set(UBIRCH_ID_STATE_KEYS_REGISTERED, false);
-    ubirch_next_key_update_set(info.validNotAfter - KEY_UPDATE_BEFORE_EXPIRE_IN_SECONDS);
+
+#if defined(CONFIG_SDK_TOOLCHAIN_SUPPORTS_TIME_WIDE_64_BITS)
+    ESP_LOGD(TAG, "validNotBefore: %lld", info.validNotBefore);
+    ESP_LOGD(TAG, "validNotAfter: %lld", info.validNotAfter);
+#else
+    // FIXME: this is a dirty fix that makes the code usable for testing purposes
+    //        for now as we have only 31 bit wide time_t.
+    if (info.validNotAfter > 0) {
+        ubirch_next_key_update_set(info.validNotAfter - KEY_UPDATE_BEFORE_EXPIRE_IN_SECONDS);
+    } else {
+        ubirch_next_key_update_set(UINT32_MAX - KEY_UPDATE_BEFORE_EXPIRE_IN_SECONDS);
+    }
+    ESP_LOGD(TAG, "validNotBefore: %u", (uint32_t)info.validNotBefore);
+    ESP_LOGD(TAG, "validNotAfter: %u", (uint32_t)info.validNotAfter);
+#endif
 }
 
 
@@ -193,12 +207,17 @@ esp_err_t update_keys(void) {
         .hwDeviceId = uuid,
         .pubKey = new_pubKey,
         .prevPubKeyId = old_pubKey,
-        .validNotAfter = now + KEY_LIFETIME_IN_SECONDS,
+        .validNotAfter = (int64_t)now + KEY_LIFETIME_IN_SECONDS,
         .validNotBefore = now
     };
 
-    ESP_LOGD(TAG, "validNotBefore: %ld", update_info.validNotBefore);
-    ESP_LOGD(TAG, "validNotAfter: %ld", update_info.validNotAfter);
+#if defined(CONFIG_SDK_TOOLCHAIN_SUPPORTS_TIME_WIDE_64_BITS)
+    ESP_LOGD(TAG, "validNotBefore: %lld", update_info.validNotBefore);
+    ESP_LOGD(TAG, "validNotAfter: %lld", update_info.validNotAfter);
+#else
+    ESP_LOGD(TAG, "validNotBefore: %u", (uint32_t)update_info.validNotBefore);
+    ESP_LOGD(TAG, "validNotAfter: %u", (uint32_t)update_info.validNotAfter);
+#endif
 
     // init with outer brace
     char json_string[610] = "{\"pubKeyInfo\":";
@@ -266,7 +285,21 @@ esp_err_t update_keys(void) {
 
     ubirch_id_state_set(UBIRCH_ID_STATE_KEYS_CREATED, true);
     ubirch_id_state_set(UBIRCH_ID_STATE_KEYS_REGISTERED, true);
-    ubirch_next_key_update_set(update_info.validNotAfter - KEY_UPDATE_BEFORE_EXPIRE_IN_SECONDS);
+
+#if defined(CONFIG_SDK_TOOLCHAIN_SUPPORTS_TIME_WIDE_64_BITS)
+    ESP_LOGD(TAG, "validNotBefore: %lld", update_info.validNotBefore);
+    ESP_LOGD(TAG, "validNotAfter: %lld", update_info.validNotAfter);
+#else
+    // FIXME: this is a dirty fix that makes the code usable for testing purposes
+    //        for now as we have only 31 bit wide time_t.
+    if (update_info.validNotAfter > 0) {
+        ubirch_next_key_update_set(update_info.validNotAfter - KEY_UPDATE_BEFORE_EXPIRE_IN_SECONDS);
+    } else {
+        ubirch_next_key_update_set(UINT32_MAX - KEY_UPDATE_BEFORE_EXPIRE_IN_SECONDS);
+    }
+    ESP_LOGD(TAG, "validNotBefore: %u", (uint32_t)update_info.validNotBefore);
+    ESP_LOGD(TAG, "validNotAfter: %u", (uint32_t)update_info.validNotAfter);
+#endif
 
     return ESP_OK;
 }
