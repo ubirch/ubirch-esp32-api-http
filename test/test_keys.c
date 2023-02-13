@@ -20,7 +20,9 @@ TEST_CASE("create_keys", "[keys]")
     TEST_ASSERT_EQUAL_INT(ESP_OK, ubirch_id_context_add("test_id_3"));
     TEST_ASSERT_EQUAL_INT(ESP_OK, ubirch_uuid_set(uuid, sizeof(uuid)));
     TEST_ASSERT_EQUAL_INT(ESP_OK, ubirch_id_context_store());
+    TEST_ASSERT(!ubirch_id_state_get(UBIRCH_ID_STATE_KEYS_CREATED));
     create_keys();
+    TEST_ASSERT(ubirch_id_state_get(UBIRCH_ID_STATE_KEYS_CREATED));
     TEST_ASSERT_EQUAL_INT(ESP_OK, ubirch_id_context_store());
     TEST_ASSERT_EQUAL_INT(ESP_OK, ubirch_id_context_load("test_id_3"));
 
