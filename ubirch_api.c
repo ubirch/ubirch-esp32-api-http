@@ -32,6 +32,7 @@
 #include "ubirch_api.h"
 #include "mbedtls/base64.h"
 #include "id_handling.h"
+#include "api-http-helper.h"
 
 static const char *TAG = "UBIRCH API";
 //#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
@@ -84,15 +85,6 @@ static esp_err_t _ubirch_http_event_handler(esp_http_client_event_t *evt) {
     return ESP_OK;
 }
 
-void uuid_to_string(const unsigned char *uuid, char *buffer, size_t len) {
-    assert(len >= 37);
-    const char *format = "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x";
-    sprintf(buffer, format,
-            uuid[0], uuid[1], uuid[2], uuid[3], uuid[4], uuid[5], uuid[6], uuid[7],
-            uuid[8], uuid[9], uuid[10], uuid[11], uuid[12], uuid[13], uuid[14], uuid[15]
-    );
-}
-
 static char *auth_to_base64(const char *auth) {
     unsigned char *auth64 = NULL;
     size_t auth64_len;
@@ -124,7 +116,9 @@ ubirch_send_err_t ubirch_send(const char *url, const unsigned char *uuid, const 
     esp_http_client_set_method(client, HTTP_METHOD_POST);
 
     char uuid_string[37];
-    uuid_to_string(uuid, uuid_string, sizeof(uuid_string));
+    if (uuid_to_string(uuid, uuid_string, sizeof(uuid_string)) < 0) {
+		return UBIRCH_SEND_ERROR;
+	}
 
     char *auth_string_raw = NULL;
     size_t auth_string_raw_size = 0;
