@@ -13,8 +13,12 @@
 #include "api-http-helper.h"
 
 /*!
- * @brief format_uuid_v3or5 -- make a UUID from a (pseudo)random 128-bit
-   number */
+ * @brief format_uuid_v3or5 -- make a UUID from a (pseudo)random 128-bit number
+ *
+ * @param [out] p_uuid pointer to uuid, where the resulting UUID will be stored into
+ * @param [in] hash pointer to hash value, which comes from SHA1 (only 16 Bytes are used here)
+ * @param [in] v Version for the UUID. Default value should be 5, but could also be 3
+ */
 static void format_uuid_v3or5(uuid_t *p_uuid, unsigned char hash[16], int v)
 {
 	/* convert UUID to local byte order */
@@ -28,10 +32,10 @@ static void format_uuid_v3or5(uuid_t *p_uuid, unsigned char hash[16], int v)
 }
 
 /*!
- * @brief create a version 5 UUID based on SHA-1, `ns` and `name`
+ * @brief create a version 5 UUID based on SHA-1, `nsid` and `name`
  * 
  * @param [out] p_uuid pointer to uuid, where the resulting UUID will be stored into
- * @param [in] nsid ns id, is the UUID of the ns
+ * @param [in] nsid NameSpace ID, is the UUID of the namespace
  * @param [in] name pointer to the name from which to generate a UUID
  * @param [in] name_len length of the name 
  */
