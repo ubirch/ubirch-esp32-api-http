@@ -1,6 +1,14 @@
-//
-// Created by gruenwaldi on 03.09.20.
-//
+/*!
+ * @file api-http-helper.c 
+ * @brief Helper function for HTTP API
+ * 
+ * @author Waldemar Gruenwald
+ * @date 2020-09-03
+ * @copyright Ubirch GmbH 2020
+ * 
+ * @note the uuid functionality is based on https://tools.ietf.org/html/rfc4122
+ */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>

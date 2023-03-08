@@ -6,7 +6,7 @@
  * @date 2020-09-03
  * @copyright Ubirch GmbH 2020
  * 
- * @note the uuid functionmality is based on https://tools.ietf.org/html/rfc4122
+ * @note the uuid functionality is based on https://tools.ietf.org/html/rfc4122
  */
 
 #ifndef EXAMPLE_ESP32_API_HTTP_HELPER_H
