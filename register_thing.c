@@ -10,7 +10,21 @@
 #include <token_handling.h>
 
 static const char *TAG = "UBIRCH REGISTER THING";
-
+/*!
+ * @example JSON
+ *
+ *  {
+ *    "FFEEDDCC-BBAA-9988-7766-554433221100":{
+ *      "state":"ok",
+ *      "apiConfig":{
+ *        "password":"00112233-4455-6677-8899-AABBCCDDEEFF",
+ *        "keyService":"https://key.prod.ubirch.com/api/keyService/v1/pubkey/mpack",
+ *        "niomon":"https://niomon.prod.ubirch.com/",
+ *        "data":"https://data.prod.ubirch.com/v1/msgPack"
+ *      }
+ *    }
+ *  }
+ */
 /*
  * Parse json and check if it matches configuration. If everything is fine,
  * write password into password_buffer.
