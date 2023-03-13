@@ -11,21 +11,35 @@
 
 static const char *TAG = "UBIRCH REGISTER THING";
 /*!
+ * TODO: fix documentation
  * @example JSON
- *
- *  {
- *    "FFEEDDCC-BBAA-9988-7766-554433221100":{
- *      "state":"ok",
- *      "apiConfig":{
- *        "password":"00112233-4455-6677-8899-AABBCCDDEEFF",
- *        "keyService":"https://key.prod.ubirch.com/api/keyService/v1/pubkey/mpack",
- *        "niomon":"https://niomon.prod.ubirch.com/",
- *        "data":"https://data.prod.ubirch.com/v1/msgPack"
+ * - response when registering device
+ *  [
+ *    {
+ *      "FFEEDDCC-BBAA-9988-7766-554433221100":{
+ *        "state":"ok",
+ *        "apiConfig":{
+ *          "password":"00112233-4455-6677-8899-AABBCCDDEEFF",
+ *          "keyService":"https://key.prod.ubirch.com/api/keyService/v1/pubkey/mpack",
+ *          "niomon":"https://niomon.prod.ubirch.com/",
+ *          "data":"https://data.prod.ubirch.com/v1/msgPack"
+ *        }
  *      }
  *    }
- *  }
- */
-/*
+ *  ]
+ *
+ * - response when requesting device info only
+ *  [
+ *    {
+ *      "FFEEDDCC-BBAA-9988-7766-554433221100":{
+ *        "password":"00112233-4455-6677-8899-AABBCCDDEEFF",
+ *        "keyService": "https://key.prod.ubirch.com/api/keyService/v1/pubkey/mpack",
+ *        "niomon": "https://niomon.prod.ubirch.com/",
+ *        "data": "https://data.prod.ubirch.com/v1/msgPack"
+ *      }
+ *    }
+ *  ]
+ *
  * Parse json and check if it matches configuration. If everything is fine,
  * write password into password_buffer.
  */
@@ -47,26 +61,35 @@ static int parse_api_info(const unsigned char* expected_uuid, const char* json,
         ESP_LOGE(TAG, "unexpected array size");
         goto PARSE_API_INFO_ERROR;
     }
-    const cJSON* device_info = cJSON_GetObjectItemCaseSensitive(
+    cJSON* device_info = cJSON_GetObjectItemCaseSensitive(
             cJSON_GetArrayItem(api_info, 0),
             expected_uuid_string);
     if (!cJSON_IsObject(device_info)) {
         ESP_LOGE(TAG, "could not get device info object");
         goto PARSE_API_INFO_ERROR;
     }
+
     const cJSON* state = cJSON_GetObjectItemCaseSensitive(device_info, "state");
-    if (!cJSON_IsString(state) || (state->valuestring == NULL)
-            || (strcmp("ok", state->valuestring) != 0)) {
-        ESP_LOGE(TAG, "state is not ok");
-        goto PARSE_API_INFO_ERROR;
+    cJSON* config = NULL;
+    if (state != NULL) {
+        // we have a state value (so it's the response of the registration)
+        if (!cJSON_IsString(state) || (state->valuestring == NULL)
+                || (strcmp("ok", state->valuestring) != 0)) {
+            ESP_LOGE(TAG, "state is not ok");
+            goto PARSE_API_INFO_ERROR;
+        }
+        config = cJSON_GetObjectItemCaseSensitive(device_info, "apiConfig");
+        if (!cJSON_IsObject(config)) {
+            ESP_LOGE(TAG, "no api config found in json");
+            goto PARSE_API_INFO_ERROR;
+        }
+    } else {
+        // we have no state value (so it's the response of the configuration request)
+        // in this case the device info object contains the configuration directly
+        config = device_info;
     }
     // check api configuration
-    const cJSON* api_config = cJSON_GetObjectItemCaseSensitive(device_info, "apiConfig");
-    if (!cJSON_IsObject(api_config)) {
-        ESP_LOGE(TAG, "no api config found in json");
-        goto PARSE_API_INFO_ERROR;
-    }
-    cJSON* niomon_url = cJSON_GetObjectItemCaseSensitive(api_config, "niomon");
+    cJSON* niomon_url = cJSON_GetObjectItemCaseSensitive(config, "niomon");
     if (!cJSON_IsString(niomon_url) || (niomon_url->valuestring == NULL)
                     || (strcmp(CONFIG_UBIRCH_BACKEND_DATA_URL, niomon_url->valuestring) != 0)) {
         ESP_LOGE(TAG, "unexpected or no niomon url");
@@ -74,7 +97,7 @@ static int parse_api_info(const unsigned char* expected_uuid, const char* json,
     }
     // so everything is fine
     // copy password from api config into password_buffer
-    cJSON* password = cJSON_GetObjectItemCaseSensitive(api_config, "password");
+    cJSON* password = cJSON_GetObjectItemCaseSensitive(config, "password");
     if (!cJSON_IsString(password) || (password->valuestring == NULL)) {
         ESP_LOGE(TAG, "failed to read password");
         goto PARSE_API_INFO_ERROR;
@@ -152,17 +175,33 @@ static esp_err_t _register_current_id_event_handler(esp_http_client_event_t* evt
 }
 
 int ubirch_register_current_id(const char* device_description) {
-    ESP_LOGD(TAG, "ubirch register current id in backend");
-    // TODO: check if id is properly loaded
-    // TODO: check if password is already set
-
     register_current_id_event_handler_user_data_context_t event_context = {
         .ok = false
     };
 
+    // get current uuid
+    unsigned char* uuid;
+    size_t uuid_len;
+    if (ubirch_uuid_get(&uuid, &uuid_len) != ESP_OK) {
+        return UBIRCH_ESP32_REGISTER_THING_ERROR;
+    }
+
+    char get_info_url[sizeof(CONFIG_UBIRCH_GET_INFO_OF_THING_URL) + 37] = CONFIG_UBIRCH_GET_INFO_OF_THING_URL;
+    if (uuid_to_string(uuid, get_info_url + sizeof(CONFIG_UBIRCH_GET_INFO_OF_THING_URL) - 1, 37) < 0) {
+        return -1;
+    }
+    ESP_LOGD(TAG, "get-info-url: \"%s\"", get_info_url);
+
+    // get authorization token
+    const char* token = NULL;
+    ubirch_token_get(&token);
+    char auth_header[1024];
+    sprintf(auth_header, "Bearer %s", token);
+    ESP_LOGD(TAG, "auth-header: \"%s\"", auth_header);
+
     // FIXME: adjust buffer size, what do we need at maximum?
     esp_http_client_config_t config = {
-            .url = CONFIG_UBIRCH_REGISTER_THING_URL,
+            .url = get_info_url,
             .event_handler = _register_current_id_event_handler,
             .user_data = &event_context,
             .buffer_size = 2048,
@@ -170,48 +209,64 @@ int ubirch_register_current_id(const char* device_description) {
     };
     esp_http_client_handle_t client = esp_http_client_init(&config);
 
-    // build request data json
-    const size_t json_data_len = UBIRCH_REGISTER_THING_JSON_OBJECT_SIZE + strlen(device_description);
-    char* json_data = malloc(json_data_len);
-    unsigned char* uuid;
-    size_t uuid_len;
-    if (ubirch_uuid_get(&uuid, &uuid_len) != ESP_OK) {
-        return UBIRCH_ESP32_REGISTER_THING_ERROR;
-    }
-    if (build_post_json_object(uuid, device_description, json_data, json_data_len) < 0) {
-        return UBIRCH_ESP32_REGISTER_THING_ERROR;
-    }
-
-    ESP_LOGD(TAG, "request: %s", json_data);
-
-    // create post
-    esp_http_client_set_url(client, CONFIG_UBIRCH_REGISTER_THING_URL);
+    ESP_LOGI(TAG, "check if device is already registered");
     esp_http_client_set_method(client, HTTP_METHOD_POST);
-    // set post data
-    esp_http_client_set_header(client, "Content-Type", "application/json");
-
-    const char* token = NULL;
-    ubirch_token_get(&token);
-    char auth_header[1024];
-    sprintf(auth_header, "Bearer %s", token);
-    ESP_LOGD(TAG, "auth-header: \"%s\"", auth_header);
     esp_http_client_set_header(client, "Authorization", auth_header);
-    esp_http_client_set_post_field(client, json_data, (int)json_data_len);
-
+    esp_http_client_set_header(client, "accept", "application/json");
     esp_err_t err = esp_http_client_perform(client);
 
-    int return_code = UBIRCH_ESP32_REGISTER_THING_SUCCESS;
+    int return_code = UBIRCH_ESP32_REGISTER_THING_REQUEST_FAILED;
     if (err == ESP_OK) {
         int http_status = esp_http_client_get_status_code(client);
         const int content_length = esp_http_client_get_content_length(client);
         ESP_LOGD(TAG, "HTTP POST status = %d, content_length = %d", http_status, content_length);
-        if (!event_context.ok) {
+        if (event_context.ok) {
+            return_code = UBIRCH_ESP32_REGISTER_THING_ALREADY_REGISTERED;
+        } else {
             return_code = UBIRCH_ESP32_REGISTER_THING_ERROR;
         }
     } else {
         ESP_LOGD(TAG, "HTTP POST request failed: %s", esp_err_to_name(err));
-        return_code = UBIRCH_ESP32_REGISTER_THING_ERROR;
+        return_code = UBIRCH_ESP32_REGISTER_THING_REQUEST_FAILED;
     }
+
+    // build up request and send
+    if (device_description != NULL && return_code == UBIRCH_ESP32_REGISTER_THING_ERROR) {
+        ESP_LOGI(TAG, "register device");
+        // build request data json
+        const size_t json_data_len = UBIRCH_REGISTER_THING_JSON_OBJECT_SIZE + strlen(device_description);
+        char* json_data = malloc(json_data_len);
+        unsigned char* uuid;
+        size_t uuid_len;
+        if (ubirch_uuid_get(&uuid, &uuid_len) != ESP_OK) {
+            return UBIRCH_ESP32_REGISTER_THING_ERROR;
+        }
+        if (build_post_json_object(uuid, device_description, json_data, json_data_len) < 0) {
+            return UBIRCH_ESP32_REGISTER_THING_ERROR;
+        }
+        ESP_LOGD(TAG, "request: %s", json_data);
+
+        // re-use request from above
+        esp_http_client_set_url(client, CONFIG_UBIRCH_REGISTER_THING_URL);
+        esp_http_client_set_header(client, "Content-Type", "application/json");
+        esp_http_client_set_post_field(client, json_data, (int)json_data_len);
+        err = esp_http_client_perform(client);
+
+        if (err == ESP_OK) {
+            int http_status = esp_http_client_get_status_code(client);
+            const int content_length = esp_http_client_get_content_length(client);
+            ESP_LOGD(TAG, "HTTP POST status = %d, content_length = %d", http_status, content_length);
+            if (event_context.ok) {
+                return_code = UBIRCH_ESP32_REGISTER_THING_SUCCESS;
+            } else {
+                return_code = UBIRCH_ESP32_REGISTER_THING_ERROR;
+            }
+        } else {
+            ESP_LOGD(TAG, "HTTP POST request failed: %s", esp_err_to_name(err));
+            return_code = UBIRCH_ESP32_REGISTER_THING_ERROR;
+        }
+    }
+
     esp_http_client_cleanup(client);
     return return_code;
 }

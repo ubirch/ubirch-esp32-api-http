@@ -34,4 +34,9 @@ TEST_CASE("parse api info", "[register_thing]") {
     TEST_ASSERT_EQUAL_INT(0, parse_api_info(uuid, json, strlen(json),
                 password_buffer, sizeof(password_buffer)));
     TEST_ASSERT_EQUAL_STRING("abcdef12-0011-4dce-9022-012345678901", password_buffer);
+
+    json = "[{\"00010203-0405-0607-0809-0a0b0c0d0e0f\":{\"password\":\"abcdef12-0011-4dce-9022-012345678901\",\"keyService\":\"https://key.prod.ubirch.com/api/keyService/v1/pubkey/mpack\",\"niomon\":\"https://niomon.prod.ubirch.com/\",\"data\":\"https://data.prod.ubirch.com/v1/msgPack\"}}]";
+    TEST_ASSERT_EQUAL_INT(0, parse_api_info(uuid, json, strlen(json),
+                password_buffer, sizeof(password_buffer)));
+    TEST_ASSERT_EQUAL_STRING("abcdef12-0011-4dce-9022-012345678901", password_buffer);
 }

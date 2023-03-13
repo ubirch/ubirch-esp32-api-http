@@ -34,11 +34,21 @@ typedef enum {
     UBIRCH_ESP32_REGISTER_THING_SUCCESS = 0,
     UBIRCH_ESP32_REGISTER_THING_ALREADY_REGISTERED,
     UBIRCH_ESP32_REGISTER_THING_ERROR,
+    UBIRCH_ESP32_REGISTER_THING_REQUEST_FAILED,
 } ubirch_esp32_register_thing_t;
 
 /*!
- * Send registration request to ubirch backend.
+ * Check if device from current context is already registered and
+ * if device_description is not NULL send registration request to
+ * ubirch backend.
  * If successfull, password of the id will be saved into current context.
+ * If thing is already registered, password will be set as well.
+ *
+ * @param[in] device_description  device description or NULL
+ * @return UBIRCH_ESP32_REGISTER_THING_SUCCESS              thing successfully registered
+ *         UBIRCH_ESP32_REGISTER_THING_ALREADY_REGISTERED   thing already registered
+ *         UBIRCH_ESP32_REGISTER_THING_ERROR                error in response from backend
+ *         UBIRCH_ESP32_REGISTER_THING_REQUEST_FAILED       failed to send one of the requests
  */
 int ubirch_register_current_id(const char* device_description);
 
