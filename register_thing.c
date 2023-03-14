@@ -1,13 +1,39 @@
-#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+/*!
+ * @file
+ * @brief ubirch register things
+ *
+ * ...
+ *
+ * @author Sven Herrmann
+ * @date   2023-03-14
+ *
+ * @copyright &copy; 2023 ubirch GmbH (https://ubirch.com)
+ *
+ * ```
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * ```
+ */
+//#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
 
 #include <string.h>
-#include <register_thing.h>
 #include <esp_http_client.h>
 #include <esp_log.h>
-#include "api-http-helper.h"
 #include <cJSON.h>
 #include <id_handling.h>
 #include <token_handling.h>
+#include <esp_err.h>
+#include "register_thing.h"
+#include "api-http-helper.h"
 
 static const char *TAG = "UBIRCH REGISTER THING";
 /*!
@@ -42,14 +68,23 @@ static const char *TAG = "UBIRCH REGISTER THING";
  *
  * Parse json and check if it matches configuration. If everything is fine,
  * write password into password_buffer.
+ *
+ * @param expected_uuid[in]         the uuid, that we expect in the json
+ * @param json[in]                  json character buffer, that is parsed
+ * @param json_size[in]             size of the json character buffer
+ * @param password_buffer[out]      password buffer for the received password
+ * @param password_buffer_len[in]   size of password buffer
+ *
+ * @return ESP_OK
+ *         ESP_FAIL
  */
-static int parse_api_info(const unsigned char* expected_uuid, const char* json,
+static esp_err_t parse_api_info(const unsigned char* expected_uuid, const char* json,
         size_t json_size, char* password_buffer, size_t password_buffer_len) {
     ESP_LOGI(TAG, "parsing api info");
     ESP_LOG_BUFFER_HEXDUMP(TAG, json, (uint16_t) json_size, ESP_LOG_DEBUG);
     char expected_uuid_string[37];
     if (uuid_to_string(expected_uuid, expected_uuid_string, 37) < 0) {
-        return -1;
+        return ESP_FAIL;
     }
 
     cJSON* api_info = cJSON_Parse(json);
@@ -102,17 +137,18 @@ static int parse_api_info(const unsigned char* expected_uuid, const char* json,
         ESP_LOGE(TAG, "failed to read password");
         goto PARSE_API_INFO_ERROR;
     }
-    if (snprintf(password_buffer, password_buffer_len, password->valuestring) < 0) {
+    if (snprintf(password_buffer, password_buffer_len, password->valuestring)
+            > password_buffer_len) {
         ESP_LOGE(TAG, "password buffer too small");
         goto PARSE_API_INFO_ERROR;
     }
 
     cJSON_Delete(api_info);
-    return 0;
+    return ESP_OK;
 
 PARSE_API_INFO_ERROR:
     cJSON_Delete(api_info);
-    return -1;
+    return ESP_FAIL;
 }
 
 // strlen("{\"hwDeviceId\":\"") + strlen("<UUID>") + strlen("\",\"description\":\"\"}\0")
@@ -158,7 +194,7 @@ static esp_err_t _register_current_id_event_handler(esp_http_client_event_t* evt
         // try to parse json response
         char password_buffer[37];
         if (parse_api_info(uuid, evt->data, evt->data_len, password_buffer,
-                    sizeof(password_buffer)) != 0) {
+                    sizeof(password_buffer)) != ESP_OK) {
             ESP_LOGE(TAG, "Failed to parse received json");
             return ESP_FAIL;
         }
@@ -265,6 +301,7 @@ int ubirch_register_current_id(const char* device_description) {
             ESP_LOGD(TAG, "HTTP POST request failed: %s", esp_err_to_name(err));
             return_code = UBIRCH_ESP32_REGISTER_THING_ERROR;
         }
+        free(json_data);
     }
 
     esp_http_client_cleanup(client);
