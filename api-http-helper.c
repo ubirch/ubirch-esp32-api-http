@@ -7,7 +7,10 @@
  * @copyright Ubirch GmbH 2020
  * 
  * @note the uuid functionality is based on https://tools.ietf.org/html/rfc4122
+ *       Please check "copyrt.h"
  */
+
+#include "copyrt.h"
 
 #include <stdlib.h>
 #include <stdio.h>
