@@ -25,18 +25,56 @@ TEST_CASE("parse api info", "[register_thing]") {
     };
     char* json = "[{\"00010203-0405-0607-0809-0a0b0c0d0e0f\":{\"state\":\"ok\",\"apiConfig\":{\"password\":\"abcdef12-0011-4dce-9022-012345678901\",\"keyService\":\"https://key.prod.ubirch.com/api/keyService/v1/pubkey/mpack\",\"niomon\":\"https://niomon.prod.ubirch.com/\",\"data\":\"https://data.prod.ubirch.com/v1/msgPack\"}}}]";
     char password_buffer[37];
-    TEST_ASSERT_EQUAL_INT(0, parse_api_info(uuid, json, strlen(json),
+    TEST_ASSERT_EQUAL_INT(ESP_OK, parse_api_info(uuid, json, strlen(json),
                 password_buffer, sizeof(password_buffer)));
     TEST_ASSERT_EQUAL_STRING("abcdef12-0011-4dce-9022-012345678901", password_buffer);
 
     // try with slightly modified json string (some newlines and spaces)
     json = "[\n{\n\"00010203-0405-0607-0809-0a0b0c0d0e0f\":  {\n\"state\": \"ok\",\n\"apiConfig\":{\"password\":  \"abcdef12-0011-4dce-9022-012345678901\",\"keyService\":\"https://key.prod.ubirch.com/api/keyService/v1/pubkey/mpack\",\"niomon\":\"https://niomon.prod.ubirch.com/\",\"data\":\"https://data.prod.ubirch.com/v1/msgPack\"}}}]";
-    TEST_ASSERT_EQUAL_INT(0, parse_api_info(uuid, json, strlen(json),
+    TEST_ASSERT_EQUAL_INT(ESP_OK, parse_api_info(uuid, json, strlen(json),
                 password_buffer, sizeof(password_buffer)));
     TEST_ASSERT_EQUAL_STRING("abcdef12-0011-4dce-9022-012345678901", password_buffer);
 
     json = "[{\"00010203-0405-0607-0809-0a0b0c0d0e0f\":{\"password\":\"abcdef12-0011-4dce-9022-012345678901\",\"keyService\":\"https://key.prod.ubirch.com/api/keyService/v1/pubkey/mpack\",\"niomon\":\"https://niomon.prod.ubirch.com/\",\"data\":\"https://data.prod.ubirch.com/v1/msgPack\"}}]";
-    TEST_ASSERT_EQUAL_INT(0, parse_api_info(uuid, json, strlen(json),
+    TEST_ASSERT_EQUAL_INT(ESP_OK, parse_api_info(uuid, json, strlen(json),
                 password_buffer, sizeof(password_buffer)));
     TEST_ASSERT_EQUAL_STRING("abcdef12-0011-4dce-9022-012345678901", password_buffer);
+
+    // some failing requests
+    // broken json: last closing "]" missing
+    json = "[{\"00010203-0405-0607-0809-0a0b0c0d0e0f\":{\"password\":\"abcdef12-0011-4dce-9022-012345678901\",\"keyService\":\"https://key.prod.ubirch.com/api/keyService/v1/pubkey/mpack\",\"niomon\":\"https://niomon.prod.ubirch.com/\",\"data\":\"https://data.prod.ubirch.com/v1/msgPack\"}}";
+    // buffer too small
+    TEST_ASSERT_EQUAL_INT(ESP_FAIL, parse_api_info(uuid, json, strlen(json),
+                password_buffer, sizeof(password_buffer) - 1));
+    // json parsing fails
+    TEST_ASSERT_EQUAL_INT(ESP_FAIL, parse_api_info(uuid, json, strlen(json),
+                password_buffer, sizeof(password_buffer)));
+    // unexpected json: includes more than one element in array
+    json = "[{\"00010203-0405-0607-0809-0a0b0c0d0e0f\":{\"password\":\"abcdef12-0011-4dce-9022-012345678901\",\"keyService\":\"https://key.prod.ubirch.com/api/keyService/v1/pubkey/mpack\",\"niomon\":\"https://niomon.prod.ubirch.com/\",\"data\":\"https://data.prod.ubirch.com/v1/msgPack\"}}, {\"00010203-0405-0607-0809-0a0b0c0d0e0g\":{\"password\":\"abcdef12-0011-4dce-9022-012345678901\",\"keyService\":\"https://key.prod.ubirch.com/api/keyService/v1/pubkey/mpack\",\"niomon\":\"https://niomon.prod.ubirch.com/\",\"data\":\"https://data.prod.ubirch.com/v1/msgPack\"}}]";
+    TEST_ASSERT_EQUAL_INT(ESP_FAIL, parse_api_info(uuid, json, strlen(json),
+                password_buffer, sizeof(password_buffer)));
+    // unexpected json: unexpected uuid
+    json = "[{\"a0010203-0405-0607-0809-0a0b0c0d0e0f\":{\"password\":\"abcdef12-0011-4dce-9022-012345678901\",\"keyService\":\"https://key.prod.ubirch.com/api/keyService/v1/pubkey/mpack\",\"niomon\":\"https://niomon.prod.ubirch.com/\",\"data\":\"https://data.prod.ubirch.com/v1/msgPack\"}}]";
+    TEST_ASSERT_EQUAL_INT(ESP_FAIL, parse_api_info(uuid, json, strlen(json),
+                password_buffer, sizeof(password_buffer)));
+    // unexpected json: state is not ok
+    json = "[{\"00010203-0405-0607-0809-0a0b0c0d0e0f\":{\"state\":\"foo\",\"apiConfig\":{\"password\":\"abcdef12-0011-4dce-9022-012345678901\",\"keyService\":\"https://key.prod.ubirch.com/api/keyService/v1/pubkey/mpack\",\"niomon\":\"https://niomon.prod.ubirch.com/\",\"data\":\"https://data.prod.ubirch.com/v1/msgPack\"}}}]";
+    TEST_ASSERT_EQUAL_INT(ESP_FAIL, parse_api_info(uuid, json, strlen(json),
+                password_buffer, sizeof(password_buffer)));
+    // unexpected json: no apiConfig
+    json = "[{\"00010203-0405-0607-0809-0a0b0c0d0e0f\":{\"state\":\"ok\",\"fooConfig\":{\"password\":\"abcdef12-0011-4dce-9022-012345678901\",\"keyService\":\"https://key.prod.ubirch.com/api/keyService/v1/pubkey/mpack\",\"niomon\":\"https://niomon.prod.ubirch.com/\",\"data\":\"https://data.prod.ubirch.com/v1/msgPack\"}}}]";
+    TEST_ASSERT_EQUAL_INT(ESP_FAIL, parse_api_info(uuid, json, strlen(json),
+                password_buffer, sizeof(password_buffer)));
+    // unexpected json: wrong niomon url
+    json = "[{\"00010203-0405-0607-0809-0a0b0c0d0e0f\":{\"state\":\"ok\",\"apiConfig\":{\"password\":\"abcdef12-0011-4dce-9022-012345678901\",\"keyService\":\"https://key.prod.ubirch.com/api/keyService/v1/pubkey/mpack\",\"niomon\":\"https://niomon.foo.ubirch.com/\",\"data\":\"https://data.prod.ubirch.com/v1/msgPack\"}}}]";
+    TEST_ASSERT_EQUAL_INT(ESP_FAIL, parse_api_info(uuid, json, strlen(json),
+                password_buffer, sizeof(password_buffer)));
+    // unexpected json: no password
+    json = "[{\"00010203-0405-0607-0809-0a0b0c0d0e0f\":{\"state\":\"ok\",\"apiConfig\":{\"spamword\":\"abcdef12-0011-4dce-9022-012345678901\",\"keyService\":\"https://key.prod.ubirch.com/api/keyService/v1/pubkey/mpack\",\"niomon\":\"https://niomon.prod.ubirch.com/\",\"data\":\"https://data.prod.ubirch.com/v1/msgPack\"}}}]";
+    TEST_ASSERT_EQUAL_INT(ESP_FAIL, parse_api_info(uuid, json, strlen(json),
+                password_buffer, sizeof(password_buffer)));
+    // unexpected json: password buffer too small
+    json = "[{\"00010203-0405-0607-0809-0a0b0c0d0e0f\":{\"state\":\"ok\",\"apiConfig\":{\"password\":\"abcdef12-0011-4dce-9022-012345678901spamspamspam\",\"keyService\":\"https://key.prod.ubirch.com/api/keyService/v1/pubkey/mpack\",\"niomon\":\"https://niomon.prod.ubirch.com/\",\"data\":\"https://data.prod.ubirch.com/v1/msgPack\"}}}]";
+    TEST_ASSERT_EQUAL_INT(ESP_FAIL, parse_api_info(uuid, json, strlen(json),
+                password_buffer, sizeof(password_buffer)));
 }
