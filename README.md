@@ -68,3 +68,18 @@ ubirch_parse_backend_response(unpacker, bin_response_handler);
 To create, register a new key-pair or update an existing one use `create_keys`, `register_keys` or `update_keys` from [`keys.h`](https://github.com/ubirch/ubirch-esp32-api-http/blob/master/keys.h), for an [example](example) usage see [here](https://github.com/ubirch/example-esp32/blob/master/main/main.c).
 Note that all of these three functions change the state of the current ID context which is selected and modified by the
 functions from [`id_handling.h`](https://github.com/ubirch/ubirch-esp32-key-storage/blob/master/id_handling.h).
+
+## UUID generation
+
+The `api-http-helper.h` includes functions for generating UUIDs version 5, which are derived from a namespace and a name via SHA1 algorithm. See also [uuidtools](https://www.uuidtools.com/v5), where UUIDs can be generated online. 
+**Note:** This implementation starts with a `Nill_UUID`, then derives the `Namespace_UUID`, then the `Name_UUID`. 
+
+The advantage of UUID V5 is that they can be regenerated, if the namespace and the name are provided. 
+### Example
+```
+uuid_t my_uuid;
+char *namespace = "my namespace";
+char *name = "my name";
+uuid_v5_create_from_name((uuid_t *)&my_uuid, namespace, strlen(namespace), name, strlen(name));
+```
+The output will be `a2278200-66f3-5875-8fda-18d379e852de`
