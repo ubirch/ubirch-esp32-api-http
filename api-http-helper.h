@@ -41,7 +41,7 @@ char *str_to_base64(const char *char_string, size_t len);
 int uuid_to_string(const uuid_t uuid, char *buffer, size_t len);
 
 /*!
- * @brief create UUID V5 from Namespace ('ns') and Name
+ * @brief create UUID V5 from Namespace \p ns and \p name
  *
  * @param [out] p_uuid pointer to uuid, which will be filled with generated UUID
  * @param [in] ns Namespace String for the first step of UUID generation
@@ -54,7 +54,7 @@ int uuid_to_string(const uuid_t uuid, char *buffer, size_t len);
 esp_err_t uuid_v5_create_from_name(uuid_t *p_uuid, char *ns, size_t ns_len, char *name, size_t name_len);
 
 /*!
- * @brief create UUID V5 from Namespace ('ns'), derived Namespace (`der_ns`) and Name
+ * @brief create UUID V5 from Namespace \p ns, derived Namespace \p der_ns and \p name
  *
  * @param [out] p_uuid pointer to uuid, which will be filled with generated UUID
  * @param [in] ns Namespace String for the first step of UUID generation

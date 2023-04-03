@@ -24,7 +24,7 @@
 #include "api-http-helper.h"
 
 /*!
- * @brief format_uuid_v3or5 -- make a UUID from a (pseudo)random 128-bit number
+ * @brief format_uuid_v3or5 -- make a UUID from a \p hash and the Version \p v
  *
  * @param [out] p_uuid pointer to uuid, where the resulting UUID will be stored into
  * @param [in] hash pointer to hash value, which comes from SHA1 (only 16 Bytes are used here)
@@ -43,7 +43,7 @@ static void format_uuid_v3or5(uuid_t *p_uuid, unsigned char hash[16], int v)
 }
 
 /*!
- * @brief create a version 5 UUID based on SHA-1, `nsid` and `name`
+ * @brief create a version 5 UUID based on SHA-1, \p nsid and \p name
  * 
  * @param [out] p_uuid pointer to uuid, where the resulting UUID will be stored into
  * @param [in] nsid NameSpace ID, is the UUID of the namespace
@@ -60,7 +60,7 @@ static void uuid_create_sha1_from_name (uuid_t *p_uuid, uuid_t nsid, char *name,
 	mbedtls_sha1_update_ret(&c, (const unsigned char *) name, name_len);
 	mbedtls_sha1_finish_ret(&c, hash);
 
-	// /* the hash is in network byte order at this point */
+	/* the hash is in network byte order at this point */
 	format_uuid_v3or5(p_uuid, hash, 5);
 }
 
