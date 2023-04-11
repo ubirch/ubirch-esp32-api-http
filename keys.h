@@ -1,6 +1,6 @@
 /*!
  * @file    keys.h
- * @brief   key and signature helping functions
+ * @brief   key helping functions
  *
  * @author Waldemar Gruenwald
  * @date   2018-10-10
@@ -41,7 +41,7 @@ extern "C" {
 extern unsigned char server_pub_key[crypto_sign_PUBLICKEYBYTES];
 
 /*!
- * Create a new signature Key pair for the current ID context.
+ * @brief Create a new signature Key pair for the current ID context.
  *
  * After creating the key pair, it is packad into msgpack together with aditional
  * information, according to the structure `ubirch_key_info()`, from `ubirch_protocol_kex.h`,
@@ -50,18 +50,20 @@ extern unsigned char server_pub_key[crypto_sign_PUBLICKEYBYTES];
 void create_keys(void);
 
 /*!
- * Register the Keys of the current ID context in the backend.
+ * @brief Register the Keys of the current ID context in the backend.
  *
- * This function can only be executed, if a network connection is available.
+ * @note This function can only be executed, if a network connection is available.
+ * @return ESP_OK, or ESP_FAIL if error occurs.
  */
 esp_err_t register_keys(void);
 
 /*!
- * Update the Keys of the current ID context in the backend.
+ * @brief Update the Keys of the current ID context in the backend.
  *
- * This function can only be executed, if a network connection is available.
+ * @note This function can only be executed, if a network connection is available.
+ * @return ESP_OK, or ESP_FAIL if error occurs.
  */
-int update_keys(void);
+esp_err_t update_keys(void);
 
 #ifdef __cplusplus
 }

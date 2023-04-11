@@ -1,6 +1,6 @@
 /*!
  * @file    keys.c
- * @brief   key and signature helping functions
+ * @brief   key helping functions
  *
  * @author Waldemar Gruenwald
  * @date   2018-10-10
