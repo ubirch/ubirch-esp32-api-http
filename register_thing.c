@@ -212,7 +212,7 @@ static esp_err_t _register_current_id_event_handler(esp_http_client_event_t* evt
 
 int ubirch_register_current_id(const char* device_description) {
     register_current_id_event_handler_user_data_context_t event_context = {
-        .ok = false
+        .ok = falseREADME.md
     };
 
     // get current uuid
