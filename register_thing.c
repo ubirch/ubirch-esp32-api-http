@@ -35,7 +35,12 @@
 #include "register_thing.h"
 #include "api-http-helper.h"
 
+#ifndef CONFIG_UBIRCH_REGISTER_THING
+#warning "UBIRCH_REGISTER_THING not enabled"
+#else
+
 static const char *TAG = "UBIRCH REGISTER THING";
+
 /*!
  * TODO: fix documentation
  * @example JSON
@@ -307,3 +312,5 @@ int ubirch_register_current_id(const char* device_description) {
     esp_http_client_cleanup(client);
     return return_code;
 }
+
+#endif // UBIRCH_REGISTER_THING

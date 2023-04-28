@@ -26,9 +26,6 @@
 #ifndef REGISTER_THING_H
 #define REGISTER_THING_H
 
-#ifndef CONFIG_UBIRCH_REGISTER_THING
-#error "UBIRCH_REGISTER_THING not enabled"
-#else
 
 typedef enum {
     UBIRCH_ESP32_REGISTER_THING_SUCCESS = 0,
@@ -36,6 +33,10 @@ typedef enum {
     UBIRCH_ESP32_REGISTER_THING_ERROR,
     UBIRCH_ESP32_REGISTER_THING_REQUEST_FAILED,
 } ubirch_esp32_register_thing_t;
+
+#ifndef CONFIG_UBIRCH_REGISTER_THING
+#warning "UBIRCH_REGISTER_THING not enabled"
+#else
 
 /*!
  * Check if device from current context is already registered and
